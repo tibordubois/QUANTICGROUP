@@ -72,37 +72,6 @@ class qBN:
         Returns
         -------
         list[dict]def getProbability(bn, shots=1024):
-    qbn = buildCircuit(bn)
-    sampler = StatevectorSampler()
-
-    pm = generate_preset_pass_manager(optimization_level=1)
-    isa_circuit = pm.run(qbn)
-
-    result = sampler.run([isa_circuit], shots=shots).result()
-
-    data_pub = result[0].data
-
-    bitstrings = data_pub.meas.get_bitstrings()
-    bitstrings = np.array([np.array(list(string[::-1])) for string in bitstrings])
-
-    res = dict()
-
-    n_qb_map = mapNodeToQBit(bn)
-
-    for n_id in bn.nodes():
-
-        res[bn.variable(n_id).name()] = dict()
-        width = len(n_qb_map[n_id])
-
-        for state in range(len(bn.cpt(n_id).tolist())):
-
-            pattern = list(np.binary_repr(state, width=width))
-
-            matches = np.all(bitstrings[:, n_qb_map[n_id][0]: n_qb_map[n_id][-1]+1] == pattern, axis=1)
-            
-            res[bn.variable(n_id).name()][state] = np.sum(matches)/shots
-
-    return res
             List containting all the CPT with the node column dropped represented in a dictionnary
         """
         res = list()

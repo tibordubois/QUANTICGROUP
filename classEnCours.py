@@ -1,6 +1,5 @@
 import pyAgrum as gum
 import numpy as np
-import ast
 from qiskit import QuantumRegister, AncillaRegister, ClassicalRegister, QuantumCircuit
 from qiskit.circuit.library import RYGate, XGate
 

@@ -8,11 +8,11 @@ from qiskit.circuit.library import RYGate, XGate
 from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
 from qiskit.primitives import StatevectorSampler
 
-from typing import Union
+from typing import Union,List,Dict
 
-class qBN:
+class qBayesNet:
 
-    def __init__(self, bn):
+    def __init__(self, bn:"pyAgrum.BayesNet"):
         self.bn = bn
 
     def getWidth(self, node: Union[str, int]) -> int:
@@ -71,7 +71,7 @@ class qBN:
 
         Returns
         -------
-        list[dict]def getProbability(bn, shots=1024):
+        List[Dict]
             List containting all the CPT with the node column dropped represented in a dictionnary
         """
         res = list()
@@ -87,7 +87,7 @@ class qBN:
 
         return res
 
-    def mapNodeToQBit(self) -> dict[int: list[int]]:
+    def mapNodeToQBit(self) -> Dict[int, List[int]]:
         """
         Maps node from baysian network to a number of qubits ids depending on the node domain size
 
@@ -201,8 +201,7 @@ class qBN:
 
     def buildCircuit(self) -> QuantumCircuit:
         """
-        Parameters
-        ---------
+        
 
         Returns
         -------

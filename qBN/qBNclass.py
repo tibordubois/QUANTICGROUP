@@ -13,6 +13,8 @@ from typing import Union #List and Dict are deprecated (python 3.9)
 class qBayesNet:
     """
     Class used to build a Quantum Circuit representation of a Bayesian Network
+    Based on the paper:
+    Quantum circuit representation of Bayesian networks - Sima E. Borujeni
 
     Attributes
     ----------

@@ -2,13 +2,16 @@ from pyAgrum import BayesNet, Instantiation, Potential
 
 import numpy as np
 
-from qiskit import QuantumRegister, QuantumCircuit
+from typing import Union #List and Dict are deprecated (python 3.9)
+
+from qiskit import QuantumRegister, QuantumCircuit, transpile
 from qiskit.circuit.library import RYGate, XGate
 from qiskit.quantum_info import Operator
-from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
-from qiskit.primitives import StatevectorSampler
+from qiskit.visualization import plot_distribution
 
-from typing import Union #List and Dict are deprecated (python 3.9)
+from qiskit_aer import AerSimulator
+
+from qiskit_ibm_runtime import SamplerV2
 
 class qBayesNet:
     """
@@ -88,7 +91,7 @@ class qBayesNet:
 
     """
 
-    def __init__(self, bn: BayesNet):
+    def __init__(self, bn: BayesNet, target_nodes: set[Union[str, int]] = None) -> None:
         """
         Parameters
         ----------
@@ -96,10 +99,13 @@ class qBayesNet:
             pyAgrum Bayesian Network
         """
 
-        self.bn = bn
-        self.n_qb_map = self.mapNodeToQBit()
+        self.target_nodes = bn.nodes() if target_nodes == None else target_nodes
+        self.target_nodes = {bn.nodeId(bn.variable(name)) for name in self.target_nodes}
 
-    def mapNodeToQBit(self) -> dict[int: list[int]]:
+        self.bn = bn
+        self.n_qb_map = self.mapNodeToQBit(self.target_nodes)
+
+    def mapNodeToQBit(self, nodes: set[int]) -> dict[int: list[int]]:
         """Maps variables IDs from Baysian Network to a list of qubits IDs
         to be implemented in a Quantum Circuit
 
@@ -112,9 +118,9 @@ class qBayesNet:
 
         res = dict()
         qubit_id = 0
-        for n_id in self.bn.nodes():
+        for n_id in nodes:
             res[n_id] = []
-            for state in range(self.getWidth(n_id)):
+            for i in range(self.getWidth(n_id)):
                 res[n_id].append(qubit_id)
                 qubit_id = qubit_id + 1
 
@@ -217,7 +223,9 @@ class qBayesNet:
 
         inst = Instantiation()
         for name in self.bn.cpt(node).names[1:]:
-            inst.add(self.bn.variable(name))
+            n_id = self.bn.nodeId(self.bn.variable(name))
+            if n_id in self.target_nodes:
+                inst.add(self.bn.variable(name))
 
         inst.setFirst()
         while not inst.end():
@@ -236,11 +244,12 @@ class qBayesNet:
             Dictionary with variable IDs as keys and Quantum Registers as values
         """
 
-        return {n_id: QuantumRegister(
-            int(np.ceil(np.log2(self.bn.variable(n_id).domainSize()))),
-            n_id
-            )
-            for n_id in self.bn.nodes()}
+        res = dict()
+
+        for  n_id in self.target_nodes:
+            res[n_id] = QuantumRegister(
+                int(np.ceil(np.log2(self.bn.variable(n_id).domainSize()))), n_id)
+        return res
 
     def indicatorFunction(self, binary_list: list[list[int]],
                                 targets: dict[int, int],
@@ -454,10 +463,14 @@ class qBayesNet:
 
         return
 
-    def buildCircuit(self, verbose: int = 0) -> QuantumCircuit:
+    def buildCircuit(self, add_measure: bool = True,
+                           verbose: int = 0) -> QuantumCircuit:
         """Builds the Quantum Circuit representation of Bayesian Network
+
         Parameters
         ---------
+        add_measure: bool = True
+            Adds measurement gate for every qubit at the end of the circuit
 
         Returns
         -------
@@ -473,14 +486,14 @@ class qBayesNet:
         root_nodes = self.getRootNodes()
         internal_nodes = self.bn.nodes().difference(root_nodes)
 
-        for n_id in root_nodes:
+        for n_id in root_nodes.intersection(self.target_nodes):
 
             self.multiQubitRotation(circuit, n_id, self.n_qb_map[n_id], {}, 
                                     verbose=verbose)
 
-        for n_id in internal_nodes:
+        for n_id in internal_nodes.intersection(self.target_nodes):
 
-            parent_id_set = self.bn.parents(n_id)
+            parent_id_set = self.bn.parents(n_id).intersection(self.target_nodes)
             parent_qbit_list = list(np.ravel([self.n_qb_map[p_id] 
                                               for p_id in parent_id_set])) 
             #list containing qubit id of each of the parents in order
@@ -506,15 +519,64 @@ class qBayesNet:
                     ]:
                     circuit.append(XGate(), qargs=[ctrl_qb_id])
 
-        circuit.measure_all()
+        if add_measure:
+            circuit.measure_all()
 
         return circuit
 
-    def run(self, shots: int = 8192) -> dict[Union[str, int]: Potential]:
+    def aerSimulation(self, circuit: QuantumCircuit,
+                          optimization_level: int = None,
+                          shots: int = 10000) -> dict[Union[str, int]: list[float]]:
+        """Builds and runs quantum circuit from parameter
+        Parameters
+        ---------
+        circuit: QuantumCircuit
+            Qunatum Circuit to be run
+        optimisation_level: int = None
+            Optimisation level for transpile fuction ranges from 0 to 3
+        shots: int = 10000
+            Number of times to be run
+
+        Returns
+        -------
+        dict[Union[str, int]: Potential]
+            Dictionary with variable names as keys, and corresponding their
+            probability vectors as values
+        """
+
+        backend_aer = AerSimulator()
+        sampler_aer = SamplerV2(backend=backend_aer)
+        circuit_aer = transpile(circuit, backend=backend_aer,
+                                optimization_level=optimization_level)
+        job_aer = sampler_aer.run([(circuit_aer, None, shots)])
+        result_aer = job_aer.result()
+        counts_aer = result_aer[0].data.meas.get_counts()
+
+        res = dict()
+        for n_id in self.target_nodes:
+            width = len(self.n_qb_map[n_id])
+            probability_vector = list()
+
+            for state in range(self.bn.variable(n_id).domainSize()):
+                pattern = np.binary_repr(state, width=width)
+                matches = [val for key, val in counts_aer.items()
+                           if key[::-1][self.n_qb_map[n_id][0]: self.n_qb_map[n_id][-1] + 1]
+                           == pattern]
+                probability_vector.append(np.sum(matches)/shots)
+
+            res[self.bn.variable(n_id).name()] = probability_vector
+
+        return res
+
+    def runBN(self, optimisation_level: int = 1,
+                    shots: int = 10000) -> dict[Union[str, int]: Potential]:
         """Builds and runs the quantum circuit representation of a bayesian network
         Parameters
         ---------
-        shots: int = 8192
+        optimisation_level: int = 1
+            Optimisation level for generate_preset_pass_manager fuction, 
+            ranges from 0 to 3
+        shots: int = 10000
             Number of times to be run
 
         Returns
@@ -525,38 +587,12 @@ class qBayesNet:
         """
 
         qbn = self.buildCircuit()
-        sampler = StatevectorSampler()
-
-        pm = generate_preset_pass_manager(optimization_level=1)
-        isa_circuit = pm.run(qbn) 
-        #Instruction Set Architecture (ISA)
-
-        result = sampler.run([isa_circuit], shots=shots).result()
-
-        data_pub = result[0].data
-        bitstrings = data_pub.meas.get_bitstrings()
-        bitstrings = np.array([np.array(list(string[::-1])) 
-                               for string in bitstrings])
-
+        run_res = self.aerSimulation(qbn, optimisation_level, shots)
         res = dict()
 
-        for n_id in self.bn.nodes():
-
+        for n_id, p_vect in run_res.items():
             portential = Potential().add(self.bn.variable(n_id))
-            width = len(self.n_qb_map[n_id])
-            probability_vector = list()
-
-            for state in range(self.bn.variable(n_id).domainSize()):
-
-                pattern = list(np.binary_repr(state, width=width))
-
-                matches = np.all(
-                    bitstrings[:, self.n_qb_map[n_id][0]: self.n_qb_map[n_id][-1]+1] 
-                    == pattern, axis=1)
-
-                probability_vector.append(np.sum(matches)/shots)
-
-            portential.fillWith(probability_vector)
+            portential.fillWith(p_vect)
             res[self.bn.variable(n_id).name()] = portential
 
         return res

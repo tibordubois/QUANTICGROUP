@@ -568,7 +568,7 @@ class qBayesNet:
 
         return res
 
-    def runBN(self, optimisation_level: int = 1,
+    def runBN(self, optimisation_level: int = None,
                     shots: int = 10000) -> dict[Union[str, int]: Potential]:
         """Builds and runs the quantum circuit representation of a bayesian network
         Parameters
@@ -586,8 +586,8 @@ class qBayesNet:
             values
         """
 
-        qbn = self.buildCircuit()
-        run_res = self.aerSimulation(qbn, optimisation_level, shots)
+        circuit = self.buildCircuit()
+        run_res = self.aerSimulation(circuit, optimisation_level, shots)
         res = dict()
 
         for n_id, p_vect in run_res.items():
@@ -596,3 +596,69 @@ class qBayesNet:
             res[self.bn.variable(n_id).name()] = portential
 
         return res
+    
+    def runBNv2(self, operator: Operator, optimisation_level: int = None,
+                    shots: int = 10000) -> dict[Union[str, int]: Potential]:
+        """Builds and runs the quantum circuit representation of a bayesian network
+        Parameters
+        ---------
+        optimisation_level: int = 1
+            Optimisation level for generate_preset_pass_manager fuction, 
+            ranges from 0 to 3
+        shots: int = 10000
+            Number of times to be run
+
+        Returns
+        -------
+        dict[Union[str, int]: Potential]
+            Dictionary with variable names as keys, and corresponding Potentail as 
+            values
+        """
+
+        q_reg_dict = self.getQuantumRegisters()
+        all_qubits = list(np.ravel([self.n_qb_map[p_id] for p_id in self.bn.nodes()])) 
+        circuit = QuantumCircuit(*list(q_reg_dict.values()))
+        circuit.append(operator, all_qubits)
+
+        circuit.measure_all()
+
+        run_res = self.aerSimulation(circuit, optimisation_level, shots)
+        res = dict()
+
+        for n_id, p_vect in run_res.items():
+            portential = Potential().add(self.bn.variable(n_id))
+            portential.fillWith(p_vect)
+            res[self.bn.variable(n_id).name()] = portential
+
+        return res
+    
+    def runBNv3(self, circuit: QuantumCircuit, optimisation_level: int = None,
+                    shots: int = 10000) -> dict[Union[str, int]: Potential]:
+        """Builds and runs the quantum circuit representation of a bayesian network
+        Parameters
+        ---------
+        optimisation_level: int = 1
+            Optimisation level for generate_preset_pass_manager fuction, 
+            ranges from 0 to 3
+        shots: int = 10000
+            Number of times to be run
+
+        Returns
+        -------
+        dict[Union[str, int]: Potential]
+            Dictionary with variable names as keys, and corresponding Potentail as 
+            values
+        """
+
+        run_res = self.aerSimulation(circuit, optimisation_level, shots)
+        res = dict()
+
+        for n_id, p_vect in run_res.items():
+            portential = Potential().add(self.bn.variable(n_id))
+            portential.fillWith(p_vect)
+            res[self.bn.variable(n_id).name()] = portential
+
+        return res
+
+    def getRMSPE(self):
+        pass

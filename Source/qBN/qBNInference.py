@@ -1,5 +1,5 @@
-from qBNclass import qBayesNet
-
+#from old.qBNclass_lessold import qBayesNet
+from qBN.qBNclass import qBayesNet
 import numpy as np
 
 from typing import Union #List and Dict are deprecated (python 3.9)
@@ -45,7 +45,6 @@ class qInference:
         self.qbn = qbn
         self.q_registers = self.qbn.getQuantumRegisters()
         self.all_qbits = np.ravel(list(self.qbn.n_qb_map.values())).tolist()
-
 
     def getA(self) -> Operator:
         """Gives the quantum sample preparation Operator object
@@ -215,7 +214,6 @@ class qInference:
 
         return G
 
-
     def getEvidenceQuBits(self, evidence: dict[int: int]) -> dict[int, int]:
         """Gives qubit representation of evidence in Baysian Network
 
@@ -305,7 +303,7 @@ class qInference:
 
         return run_res
 
-    def rejectionSamplingV1(self, evidence: dict[Union[str, int]: int],
+    def rejectionSampling(self, evidence: dict[Union[str, int]: int],
                                 num_samples: int = 1000,
                                 verbose : int = 0) \
                                 -> dict[Union[str, int]: list[float]]:

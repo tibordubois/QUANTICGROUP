@@ -6,7 +6,7 @@ sys.path.append('..')
 from qBN.qBNclass import qBayesNet
 
 
-class TestQBayesNet(unittest.TestCase):
+class TestQBayesNet2(unittest.TestCase):
     def test_getWidth(self):
         # Testez la méthode getWidth
         # Créez une instance de qBayesNet

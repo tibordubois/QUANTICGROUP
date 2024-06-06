@@ -2,16 +2,20 @@ from pyAgrum import BayesNet, Instantiation, Potential
 
 import numpy as np
 
+import re
+
 from typing import Union #List and Dict are deprecated (python 3.9)
 
 from qiskit import QuantumRegister, QuantumCircuit, transpile
 from qiskit.circuit.library import RYGate, XGate
 from qiskit.quantum_info import Operator
-from qiskit.visualization import plot_distribution
+#from qiskit.visualization import plot_distribution
 
 from qiskit_aer import AerSimulator
 
 from qiskit_ibm_runtime import SamplerV2
+from qiskit_ibm_runtime.fake_provider import FakeOsaka
+
 
 class qBayesNet:
     """
@@ -548,7 +552,7 @@ class qBayesNet:
         sampler_aer = SamplerV2(backend=backend_aer)
         circuit_aer = transpile(circuit, backend=backend_aer,
                                 optimization_level=optimization_level)
-        job_aer = sampler_aer.run([(circuit_aer, None, shots)])
+        job_aer = sampler_aer.run([circuit_aer], shots=shots)
         result_aer = job_aer.result()
         counts_aer = result_aer[0].data.meas.get_counts()
 
@@ -568,14 +572,10 @@ class qBayesNet:
 
         return res
 
-    def runBN(self, optimisation_level: int = None,
-                    shots: int = 10000) -> dict[Union[str, int]: Potential]:
+    def runBN(self, shots: int = 10000) -> dict[Union[str, int]: Potential]:
         """Builds and runs the quantum circuit representation of a bayesian network
         Parameters
         ---------
-        optimisation_level: int = 1
-            Optimisation level for generate_preset_pass_manager fuction, 
-            ranges from 0 to 3
         shots: int = 10000
             Number of times to be run
 
@@ -587,7 +587,7 @@ class qBayesNet:
         """
 
         qbn = self.buildCircuit()
-        run_res = self.aerSimulation(qbn, optimisation_level, shots)
+        run_res = self.aerSimulation(qbn, shots)
         res = dict()
 
         for n_id, p_vect in run_res.items():
@@ -599,3 +599,6 @@ class qBayesNet:
 
     def getRMSPE(self):
         pass
+
+
+

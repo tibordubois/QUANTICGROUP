@@ -1,5 +1,5 @@
-#from old.qBNclass_lessold import qBayesNet
-from qBN.qBNclass import qBayesNet
+from .qBNMC import qBayesNet #relative import
+
 import numpy as np
 
 from typing import Union #List and Dict are deprecated (python 3.9)
@@ -7,10 +7,11 @@ from typing import Union #List and Dict are deprecated (python 3.9)
 from qiskit import ClassicalRegister, QuantumCircuit
 from qiskit.circuit.library import XGate, ZGate
 from qiskit.quantum_info import Operator
-from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
-from qiskit.primitives import StatevectorSampler
 
-from qiskit.visualization import array_to_latex
+import scipy.linalg #for qiskit transpile function
+
+from pyAgrum import Potential
+
 
 
 class qInference:
@@ -45,6 +46,10 @@ class qInference:
         self.qbn = qbn
         self.q_registers = self.qbn.getQuantumRegisters()
         self.all_qbits = np.ravel(list(self.qbn.n_qb_map.values())).tolist()
+        self.evidence = dict()
+        self.inference_res = None
+        self.max_iter = 1000
+        self.log = {"A": 0, "B": 0}
 
     def getA(self) -> Operator:
         """Gives the quantum sample preparation Operator object
@@ -81,11 +86,11 @@ class qInference:
         M_label = M.label
         M = Operator(M.adjoint())
         M = M.to_instruction()
-        M.label = M_label+'\u2020'
+        if M_label is not None: M.label = M_label+'\u2020'
         return M
 
     def getB(self, evidence_qbs: dict[int, int]) -> Operator:
-        """Gives the B gate of the phase flip operator (eq7)
+        """Gives the B gate of the phase flip operator ++(eq7)
 
         Parameters
         ----------
@@ -238,7 +243,6 @@ class qInference:
 
     def getSample(self, A: Operator, G: Operator,
                         evidence: dict[Union[str, int]: int],
-                        optimisation_level: int = None,
                         verbose: int = 0) -> dict[int: int]:
         """Generate one sample from evidence (Algorithm 1)
 
@@ -250,9 +254,6 @@ class qInference:
             Gate G
         evidence: dict[Union[str, int]: int]
             Dictionary with variable IDs as keys and their state as values
-        optimisation_level: int = 1
-            Optimisation level for generate_preset_pass_manager fuction,
-            ranges from 0 to 3
 
         Returns
         -------
@@ -269,17 +270,21 @@ class qInference:
         k = -2
 
         while True:
+
             k = k + 1
+
+            self.log['A'] += 1
+            self.log['G'] += 2*int(np.ceil(2.0**k)) - 1
 
             for i in range(1, A.num_qubits+1):
                 p = circuit.data.pop(-1)
 
-            for i in range(int(np.ceil(2.0**k))):
-                circuit.compose(G, inplace=True)
+
+            circuit.compose(G.power(int(np.ceil(2.0**k))), inplace=True)
 
             circuit.measure_all(add_bits=False)
 
-            run_res = self.qbn.aerSimulation(circuit, optimisation_level, 1)
+            run_res = self.qbn.aerSimulation(circuit, shots=1)
 
             run_res = {self.qbn.bn.nodeId(self.qbn.bn.variable(node)): state.index(1.0)
                        for node, state in run_res.items()}
@@ -304,7 +309,6 @@ class qInference:
         return run_res
 
     def rejectionSampling(self, evidence: dict[Union[str, int]: int],
-                                num_samples: int = 1000,
                                 verbose : int = 0) \
                                 -> dict[Union[str, int]: list[float]]:
         """Performs rejection sampling on Quantum Circuit representation of
@@ -323,6 +327,8 @@ class qInference:
             Dictionary with variable names as keys and proability vector as values
         """
 
+        self.log = {"A": 0, "G": 0}
+
         evidence_n_id = {self.qbn.bn.nodeId(self.qbn.bn.variable(key)): val
                          for key, val in evidence.items()}
         evidence_qbs = self.getEvidenceQuBits(evidence_n_id)
@@ -333,11 +339,58 @@ class qInference:
         res = {node: [0] * self.qbn.bn.variable(node).domainSize()
                for node in self.qbn.n_qb_map.keys()}
 
-        for i in range(num_samples):
+        for i in range(self.max_iter):
             sample = self.getSample(A, G, evidence)
 
             for node, state in sample.items():
-                res[node][state] += 1.0/num_samples
+                res[node][state] += 1.0/self.max_iter
 
             if verbose > 0: print(f"sample {i} \t = {sample}")
+
+        res = {self.qbn.bn.variable(key).name(): val for key, val in res.items()}
+        
         return res
+
+    def addEvidence(self, node:Union[str, int], state: int) -> None:
+        """
+        """
+        name = self.qbn.bn.variable(node).name()
+        if name in self.evidence.keys():
+            raise Exception(f"Invalid argument:  node {node} already has an evidence. Please use chgEvidence()", node)
+        self.evidence[name] = state
+
+    def chgEvidence(self, node: Union[str, int], state: int) -> None:
+        """
+        """
+        name = self.qbn.bn.variable(node).name()
+        if name not in self.evidence.keys():
+            raise Exception(f"Invalid argument: {node} has no evidence. Please use addEvidence().", node)
+        self.evidence[name] = state
+
+    def setEvidence(self, evidence: dict[Union[str, int]: int]) -> None:
+        """
+        """
+        self.evidence = evidence
+
+    def setMaxIter(self, max_iter: int = 1000) -> None:
+        """
+        """
+        self.max_iter = max_iter
+
+    def makeInference(self) -> None:
+        """
+        """
+        self.inference_res = self.rejectionSampling(self.evidence)
+
+    def posterior(self, node: Union[str, int]) -> Potential:
+        """
+        """
+        name = self.qbn.bn.variable(node).name()
+        potential = Potential().add(self.qbn.bn.variable(name))
+
+        if self.inference_res is None: self.makeInference()
+        potential.fillWith(self.inference_res[name])
+
+        return potential
+
+

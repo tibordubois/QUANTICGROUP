@@ -8,48 +8,53 @@ from qiskit_aer import AerSimulator
 
 from qiskit.quantum_info import Operator
 
-from qiskit_ibm_runtime import QiskitRuntimeService
 from qiskit_ibm_runtime.ibm_backend import IBMBackend
 
 from pyAgrum import LazyPropagation
 
 import matplotlib.pyplot as plt
 
-service = QiskitRuntimeService(
-    channel='ibm_quantum',
-    instance='ibm-q/open/main',
-    token='2871fe563fabd1df569acfc900f554cd6c9874c98f9a179d17143ce66570130cde317ac0c002524befd1af86259cb6cdf67e88512c054f44a94e3e948557e249'
-)
-
-default_backend = service.get_backend("ibm_brisbane")
-
-# Or save your credentials on disk.
-# QiskitRuntimeService.save_account(channel='ibm_quantum', instance='ibm-q/open/main', token='2871fe563fabd1df569acfc900f554cd6c9874c98f9a179d17143ce66570130cde317ac0c002524befd1af86259cb6cdf67e88512c054f44a94e3e948557e249')
 
 class qRuntime:
     """
+    Class used to evaluate the thoeretical time of execution of a quantum sampler on a quantum device
+
+    Attributes
+    ----------
+
+    Methods
+    -------
+
     """
 
-    def __init__(self, qinf: qInference, backend: IBMBackend = None) -> None:
+    def __init__(self, qinf: qInference, backend: IBMBackend) -> None:
         """
+        Initialises the qBaysNet Object 
+
+        Parameters
+        ----------
+        qinf: qInference
+            Quantum rejecetion sampler
+        backend: IBMBackend
+            Backend to get the execution time on quantum harware
+
         """
         self.qinf = qinf
-
-        self.default_backend = default_backend if backend is None \
-                                              else backend
-        
+        self.default_backend = backend
         self.A_time = None
         self.G_time = None
 
     def getGateExecutionTime(self) -> None:
         """
+        Stores the execution time of gate A and G
+    
         """
-        self.A_time = self.samplePrepEstimation()
-        self.G_time = self.groverIterateEstimation()
+        self.A_time = self.getAtime()
+        self.G_time = self.getGtime()
 
-    def samplePrepEstimation(self, backend: IBMBackend = None) -> float:
-        """Estimates the theoredical runtime of the quantum circuit from given backend in 
-        and delays in seconds
+    def getAtime(self, backend: IBMBackend = None) -> float:
+        """
+        Estimates the theoredical runtime of the quantum circuit from given backend in seconds
 
         Parameters
         ---------
@@ -60,6 +65,7 @@ class qRuntime:
         -------
         float
             Estimate of the circuit runtime in seconds
+
         """
         if backend == None: backend = self.default_backend
 
@@ -69,7 +75,7 @@ class qRuntime:
         circuit.compose(A, inplace=True)
 
         transpiled_circuit = transpile(circuit, backend=backend)
-        print(transpiled_circuit.depth())
+        print(f"A gate transpiled circuit depth: {transpiled_circuit.depth()}")
 
         dag_circuit = circuit_to_dag(transpiled_circuit)
         circuit_depth = dag_circuit.count_ops_longest_path()
@@ -80,22 +86,40 @@ class qRuntime:
         for key, val in circuit_depth.items():
             instruction = next(iter(backend.target[key].values()), None) #to be revisited
             res += instruction.duration * val
-        print(res)
+        print(f"A gate execution time: {res} s")
         return res
 
-    def groverIterateEstimation(self, backend: IBMBackend = None) -> float:
+    def getGtime(self, backend: IBMBackend = None) -> float:
         """
+        Estimates the theoredical runtime of a Grover iterate from given backend in seconds
+
+        Parameters
+        ---------
+        backend: AerSimulator = None
+            Backend to transpile the quantum circuit (default set to AerSimulator)
+
+        Returns
+        -------
+        float
+            Estimate of the circuit runtime in seconds
+
         """
         if backend == None: backend = self.default_backend
 
+        evidence_n_id = {self.qinf.qbn.bn.nodeId(self.qinf.qbn.bn.variable(key)): val
+                         for key, val in self.qinf.evidence.items()}
+        
+        evidence_qbs = self.qinf.getEvidenceQuBits(evidence_n_id)
+
         A = self.qinf.getA() #gate depth may be shorter due to optimisation
-        G = self.qinf.getG(A, evidence_qbs=self.qinf.evidence)
+        G = self.qinf.getG(A, evidence_qbs=evidence_qbs)
 
         circuit = QuantumCircuit(*list(self.qinf.q_registers.values()))
         circuit.compose(G, inplace=True)
 
         transpiled_circuit = transpile(circuit, backend=backend)
-        print(transpiled_circuit.depth())
+        print(f"G gate transpiled circuit depth: {transpiled_circuit.depth()}")
+
         dag_circuit = circuit_to_dag(transpiled_circuit)
         circuit_depth = dag_circuit.count_ops_longest_path()
         circuit_depth.pop("barrier", None)
@@ -105,11 +129,17 @@ class qRuntime:
         for key, val in circuit_depth.items():
             instruction = next(iter(backend.target[key].values()), None) #to be revisited
             res += instruction.duration * val
-        print(res)
+        print(f"G gate execution time: {res} s")
         return res
 
     def rejectionSamplingRuntime(self) -> float:
         """
+        Uses gate execution time from before to compute the total time of the rejection sampling process 
+
+        Returns
+        -------
+        float
+
         """
         if self.A_time is None or self.G_time is None:
             self.getGateExecutionTime()
@@ -121,7 +151,8 @@ class qRuntime:
 
     def compareInference(self, ie = None, ax=None):
         """
-        compare 2 inference by plotting all the points from (posterior(ie),posterior(ie2))
+        Compares 2 inference by plotting all the points from qInference and ie
+        
         """
 
         bn = self.qinf.qbn.bn

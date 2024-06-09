@@ -95,22 +95,23 @@ class qBayesNet:
 
     """
 
-    def __init__(self, bn: BayesNet, target_nodes: set[Union[str, int]] = None) -> None:
+    def __init__(self, bn: BayesNet) -> None:
         """
+        Initialises the qBaysNet Object 
+
         Parameters
         ----------
         bn : BayesNet
             pyAgrum Bayesian Network
+
         """
 
-        self.target_nodes = bn.nodes() if target_nodes == None else target_nodes
-        self.target_nodes = {bn.nodeId(bn.variable(name)) for name in self.target_nodes}
-
         self.bn = bn
-        self.n_qb_map = self.mapNodeToQBit(self.target_nodes)
+        self.n_qb_map = self.mapNodeToQBit(self.bn.nodes())
 
     def mapNodeToQBit(self, nodes: set[int]) -> dict[int: list[int]]:
-        """Maps variables IDs from Baysian Network to a list of qubits IDs
+        """
+        Maps variables IDs from Baysian Network to a list of qubits IDs
         to be implemented in a Quantum Circuit
 
         Returns
@@ -118,6 +119,7 @@ class qBayesNet:
         dict[int: list[int]]
             Dictionary with variable ID as key and the list of its corresponding
             qubit IDs as value
+        
         """
 
         res = dict()
@@ -131,7 +133,8 @@ class qBayesNet:
         return res
 
     def getWidth(self, node: Union[str, int]) -> int:
-        """Give the required number of qubits to represent a variable
+        """
+        Give the required number of qubits to represent a variable
         (eq21)
 
         Parameters
@@ -143,6 +146,7 @@ class qBayesNet:
         -------
         int
             Number of qubits required to represent the given variable
+        
         """
 
         domain_size = self.bn.variable(node).domainSize()
@@ -150,15 +154,14 @@ class qBayesNet:
 
     def getTotNumQBits(self) -> int: #not used
         """
+        Gives the total number of qubits required to build the quantum circuit
         (eq21)
-
-        Parameters
-        ---------
 
         Returns
         -------
         int
             Total number of qubits required to build the quantum circuit
+        
         """
         s = np.sum([self.getWidth(id) for id in self.bn.nodes()], dtype=int)
         return int(s)
@@ -166,7 +169,8 @@ class qBayesNet:
     def getBinarizedParameters(self, width_dict: dict[Union[str, int]: int],
                                      param_dict: dict[Union[str, int]: int]) \
                                      -> dict[Union[str, int]: list[int]]:
-        """Gives the binary representations of the states of a variable in a
+        """
+        Gives the binary representations of the states of a variable in a
         Bayesian Network
 
         Parameters
@@ -182,6 +186,7 @@ class qBayesNet:
         dict[str: list[int]]
             Dictionary with name of variables as keys and a binary string
             (list of 0s and 1s) as values
+        
         """
 
         width_dict_id = {self.bn.nodeId(self.bn.variable(key)): val
@@ -196,20 +201,23 @@ class qBayesNet:
         return bin_params_dict
 
     def getRootNodes(self) -> set[int]:
-        """Gives the IDs of the root nodes (variables) in the DAG representation of
+        """
+        Gives the IDs of the root nodes (variables) in the DAG representation of
         the Bayesian Network
 
         Returns
         -------
         set[int]
             Set of integers representing root node IDs
+        
         """
 
         return {id for id in self.bn.nodes() if len(self.bn.parents(id)) == 0}
 
     def getAllParentSates(self, node: Union[str, int]) \
                                 -> list[dict[Union[str, int]: int]]:
-        """Gives all the possible parent state combinations of a given variable
+        """
+        Gives all the possible parent state combinations of a given variable
 
         Parameters
         ----------
@@ -221,6 +229,7 @@ class qBayesNet:
         list[dict[Union[str, int]: int]]
             List containting dicrionnaries with variable names as keys and their
             corresponding state as values
+        
         """
 
         res = list()
@@ -228,7 +237,7 @@ class qBayesNet:
         inst = Instantiation()
         for name in self.bn.cpt(node).names[1:]:
             n_id = self.bn.nodeId(self.bn.variable(name))
-            if n_id in self.target_nodes:
+            if n_id in self.bn.nodes():
                 inst.add(self.bn.variable(name))
 
         inst.setFirst()
@@ -239,18 +248,20 @@ class qBayesNet:
         return res
 
     def getQuantumRegisters(self) -> dict[int: QuantumRegister]:
-        """Gives the Quantum Registers used to represent the Bayesian Network as
+        """
+        Gives the Quantum Registers used to represent the Bayesian Network as
         a Quantum Circuit
 
         Returns
         -------
         dict[int: QuantumRegister]
             Dictionary with variable IDs as keys and Quantum Registers as values
+       
         """
 
         res = dict()
 
-        for  n_id in self.target_nodes:
+        for  n_id in self.bn.nodes():
             res[n_id] = QuantumRegister(
                 int(np.ceil(np.log2(self.bn.variable(n_id).domainSize()))), n_id)
         return res
@@ -258,7 +269,8 @@ class qBayesNet:
     def indicatorFunction(self, binary_list: list[list[int]],
                                 targets: dict[int, int],
                                 verbose: int = 0) -> list[bool]:
-        """Gives a list of matches when given a list of binary strings
+        """
+        Gives a list of matches when given a list of binary strings
         (represented using lists) and a dictionary of conditions
         (eq17) (eq19)
 
@@ -278,6 +290,7 @@ class qBayesNet:
         list[bool]
             List where True corresponds to a binary string (list of 0s and 1s)
             satisfying the condition given by targets, and False otherwise
+        
         """
 
         if verbose > 0:
@@ -307,8 +320,8 @@ class qBayesNet:
                              param_qbs: dict[int, int], 
                              param_nodes: dict[Union[str, int]: int] = None, 
                              verbose: int = 0) -> float:
-        """Gives the probability that the qubit with given ID (in the context of
-        the whole circuit) equals to the given value conditioned to other qubits
+        """
+        Gives the probability that the qb_id qubit state equals to the given value conditioned to other qubits
         representing the variable and other nodes in the Bayesian Network
         (eq18) (eq20)
 
@@ -330,6 +343,7 @@ class qBayesNet:
         -------
         float
             Value of the probability measure
+
         """
 
         if verbose > 0:
@@ -377,9 +391,9 @@ class qBayesNet:
                                  param_nodes: dict[Union[str, int]: int] = None, 
                                  control_qbs: list[int] = None, 
                                  verbose: int = 0) -> Operator:
-        """Procedure that adds to the Quantum Circuit a series of rotations that 
-        maps the probabilities of the variable to the qubits representing it
-        (Fig9) (eq18)
+        """
+        Adds to the Quantum Circuit a series of rotations that 
+        maps the probabilities of the variable to their corresponding qubits        (Fig9) (eq18)
 
         Parameters
         ---------
@@ -398,6 +412,11 @@ class qBayesNet:
         control_qbs:
             List containing the IDs of qubits representing parent nodes of 
             the variable in DAG
+        
+        Returns
+        -------
+        Operator
+
         """
 
         if verbose > 0 :
@@ -469,16 +488,18 @@ class qBayesNet:
 
     def buildCircuit(self, add_measure: bool = True,
                            verbose: int = 0) -> QuantumCircuit:
-        """Builds the Quantum Circuit representation of Bayesian Network
+        """
+        Builds the Quantum Circuit representation of Bayesian Network
 
         Parameters
-        ---------
+        ----------
         add_measure: bool = True
             Adds measurement gate for every qubit at the end of the circuit
 
         Returns
         -------
         QuantumCircuit
+
         """
 
         if verbose > 0:
@@ -489,15 +510,16 @@ class qBayesNet:
 
         root_nodes = self.getRootNodes()
         internal_nodes = self.bn.nodes().difference(root_nodes)
+        internal_nodes = [n_id for n_id in self.bn.topologicalOrder() if n_id in internal_nodes]
 
-        for n_id in root_nodes.intersection(self.target_nodes):
+        for n_id in root_nodes:
 
             self.multiQubitRotation(circuit, n_id, self.n_qb_map[n_id], {}, 
                                     verbose=verbose)
 
-        for n_id in internal_nodes.intersection(self.target_nodes):
+        for n_id in internal_nodes:
 
-            parent_id_set = self.bn.parents(n_id).intersection(self.target_nodes)
+            parent_id_set = self.bn.parents(n_id)
             parent_qbit_list = list(np.ravel([self.n_qb_map[p_id] 
                                               for p_id in parent_id_set])) 
             #list containing qubit id of each of the parents in order
@@ -529,9 +551,10 @@ class qBayesNet:
         return circuit
 
     def aerSimulation(self, circuit: QuantumCircuit,
-                          optimization_level: int = None,
                           shots: int = 10000) -> dict[Union[str, int]: list[float]]:
-        """Builds and runs quantum circuit from parameter
+        """
+        Builds and runs quantum circuit from parameter
+
         Parameters
         ---------
         circuit: QuantumCircuit
@@ -546,18 +569,18 @@ class qBayesNet:
         dict[Union[str, int]: Potential]
             Dictionary with variable names as keys, and corresponding their
             probability vectors as values
+
         """
 
         backend_aer = AerSimulator()
         sampler_aer = SamplerV2(backend=backend_aer)
-        circuit_aer = transpile(circuit, backend=backend_aer,
-                                optimization_level=optimization_level)
+        circuit_aer = transpile(circuit, backend=backend_aer)
         job_aer = sampler_aer.run([circuit_aer], shots=shots)
         result_aer = job_aer.result()
         counts_aer = result_aer[0].data.meas.get_counts()
 
         res = dict()
-        for n_id in self.target_nodes:
+        for n_id in self.bn.nodes():
             width = len(self.n_qb_map[n_id])
             probability_vector = list()
 
@@ -573,9 +596,11 @@ class qBayesNet:
         return res
 
     def runBN(self, shots: int = 10000) -> dict[Union[str, int]: Potential]:
-        """Builds and runs the quantum circuit representation of a bayesian network
+        """
+        Builds and runs the quantum circuit representation of a bayesian network
+        
         Parameters
-        ---------
+        ----------
         shots: int = 10000
             Number of times to be run
 
@@ -584,10 +609,11 @@ class qBayesNet:
         dict[Union[str, int]: Potential]
             Dictionary with variable names as keys, and corresponding Potentail as 
             values
+
         """
 
         qbn = self.buildCircuit()
-        run_res = self.aerSimulation(qbn, shots)
+        run_res = self.aerSimulation(qbn, shots=shots)
         res = dict()
 
         for n_id, p_vect in run_res.items():

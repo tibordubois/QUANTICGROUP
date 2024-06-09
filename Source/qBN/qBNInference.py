@@ -10,7 +10,7 @@ from qiskit.quantum_info import Operator
 
 import scipy.linalg #for qiskit transpile function
 
-from pyAgrum import Potential
+from pyAgrum import Potential, BayesNetFragment
 
 
 
@@ -33,14 +33,18 @@ class qInference:
     getA(self) -> Operator:
         Gives the Operator object represenation of the Quantum Circuit representing
         the Baysian Network
+    
     """
 
     def __init__(self, qbn: qBayesNet) -> None:
         """
+        Initialises the qInference Object 
+
         Parameters
         ----------
         qbn : qBayesNet
             Quantum Bayesian Network
+
         """
 
         self.qbn = qbn
@@ -52,13 +56,15 @@ class qInference:
         self.log = {"A": 0, "B": 0}
 
     def getA(self) -> Operator:
-        """Gives the quantum sample preparation Operator object
+        """
+        Gives the quantum sample preparation Operator object
         Operator of the Quantum Circuit representing the Baysian Network
 
         Returns
         -------
         Operator
             Quantum gate A
+
         """
 
         circuit = self.qbn.buildCircuit(add_measure=False)
@@ -70,7 +76,8 @@ class qInference:
         return A
 
     def getAdjoint(self, M: Operator):
-        """Gives the adjoint operator of M
+        """
+        Gives the adjoint operator of M
 
         Parameters
         ----------
@@ -81,6 +88,7 @@ class qInference:
         -------
         Operator
             M adjoint
+
         """
 
         M_label = M.label
@@ -90,7 +98,8 @@ class qInference:
         return M
 
     def getB(self, evidence_qbs: dict[int, int]) -> Operator:
-        """Gives the B gate of the phase flip operator ++(eq7)
+        """
+        Gives the B gate of the phase flip operator (eq7)
 
         Parameters
         ----------
@@ -101,6 +110,7 @@ class qInference:
         -------
         Operator
             Quantum gate B
+        
         """
 
         circuit = QuantumCircuit(*list(self.q_registers.values()))
@@ -117,7 +127,8 @@ class qInference:
         return B
 
     def getZ(self, evidence_qbs: dict[int, int]) -> Operator:
-        """Gives the Z gate of the phase flip operator (eq7)
+        """
+        Gives the Z gate of the phase flip operator (eq7)
 
         Parameters
         ----------
@@ -128,6 +139,7 @@ class qInference:
         -------
         Operator
             Quantum gate Z
+
         """
 
         circuit = QuantumCircuit(*list(self.q_registers.values()))
@@ -146,7 +158,8 @@ class qInference:
         return Z
 
     def getS(self, evidence_qbs: dict[int, int]) -> Operator:
-        """Gives the phase flip operator (eq7)
+        """
+        Gives the phase flip operator (eq7)
 
         Parameters
         ----------
@@ -157,6 +170,7 @@ class qInference:
         -------
         Operator
             Quantum gate S
+
         """
 
         circuit = QuantumCircuit(*list(self.q_registers.values()))
@@ -184,7 +198,8 @@ class qInference:
         return S
 
     def getG(self, A: Operator, evidence_qbs: dict[int, int]) -> Operator:
-        """Gives the grover iterate
+        """
+        Gives the Grover iterate
 
         Parameters
         ----------
@@ -197,6 +212,7 @@ class qInference:
         -------
         Operator
             Quantum gate G
+
         """
 
         circuit = QuantumCircuit(*list(self.q_registers.values()))
@@ -220,7 +236,8 @@ class qInference:
         return G
 
     def getEvidenceQuBits(self, evidence: dict[int: int]) -> dict[int, int]:
-        """Gives qubit representation of evidence in Baysian Network
+        """
+        Gives qubit representation of evidence in Baysian Network
 
         Parameters
         ----------
@@ -231,6 +248,7 @@ class qInference:
         -------
         dict[int, int]
             Dictionary with qubit IDs as keys and their quantum state as values
+        
         """
         res = dict()
 
@@ -244,7 +262,8 @@ class qInference:
     def getSample(self, A: Operator, G: Operator,
                         evidence: dict[Union[str, int]: int],
                         verbose: int = 0) -> dict[int: int]:
-        """Generate one sample from evidence (Algorithm 1)
+        """
+        Generate one sample from evidence (Algorithm 1)
 
         Parameters
         ----------
@@ -259,6 +278,7 @@ class qInference:
         -------
         dict[int, int]
             Dictionary with variable IDs as keys and their state as values
+        
         """
 
         cl_reg = ClassicalRegister(len(self.all_qbits), "meas")
@@ -311,7 +331,8 @@ class qInference:
     def rejectionSampling(self, evidence: dict[Union[str, int]: int],
                                 verbose : int = 0) \
                                 -> dict[Union[str, int]: list[float]]:
-        """Performs rejection sampling on Quantum Circuit representation of
+        """
+        Performs rejection sampling on Quantum Circuit representation of
         Baysian Network
 
         Parameters
@@ -325,6 +346,7 @@ class qInference:
         -------
         dict[Union[str, int]: list[float]]
             Dictionary with variable names as keys and proability vector as values
+        
         """
 
         self.log = {"A": 0, "G": 0}
@@ -351,39 +373,51 @@ class qInference:
         
         return res
 
-    def addEvidence(self, node:Union[str, int], state: int) -> None:
-        """
-        """
-        name = self.qbn.bn.variable(node).name()
-        if name in self.evidence.keys():
-            raise Exception(f"Invalid argument:  node {node} already has an evidence. Please use chgEvidence()", node)
-        self.evidence[name] = state
-
-    def chgEvidence(self, node: Union[str, int], state: int) -> None:
-        """
-        """
-        name = self.qbn.bn.variable(node).name()
-        if name not in self.evidence.keys():
-            raise Exception(f"Invalid argument: {node} has no evidence. Please use addEvidence().", node)
-        self.evidence[name] = state
-
     def setEvidence(self, evidence: dict[Union[str, int]: int]) -> None:
         """
+        Sets the evidence of the rejection sampler 
+        
+        Parameters
+        ----------
+        evidence: dict[Union[str, int]: int]
+            Dictionary with variable IDs as keys and their state as values
+
         """
         self.evidence = evidence
 
     def setMaxIter(self, max_iter: int = 1000) -> None:
         """
+        Sets the max iteration of the rejection sampler 
+
+        Parameters
+        ----------
+        max_iter: int = 1000
+            Max iteration
+
         """
         self.max_iter = max_iter
 
     def makeInference(self) -> None:
         """
+        Performs rejection sampling and stores the sampling results in inference_res
+
         """
         self.inference_res = self.rejectionSampling(self.evidence)
 
     def posterior(self, node: Union[str, int]) -> Potential:
         """
+        Give the probability table of the node variable from sampling results
+
+        Parameters
+        ----------
+        node: Union[str, int]
+            Variable name or ID
+        
+        Returns
+        -------
+        Potential
+            pyAgrum.Potential object
+            
         """
         name = self.qbn.bn.variable(node).name()
         potential = Potential().add(self.qbn.bn.variable(name))
@@ -392,5 +426,22 @@ class qInference:
         potential.fillWith(self.inference_res[name])
 
         return potential
+
+    def useFragmentBN(self, evidence: set[Union[str, int]] = None, target: set[Union[str, int]] = None) -> None:
+        """
+        """
+        if evidence is None: evidence = set()
+        if target is None: target = set()
+        evidence = evidence.union(self.evidence.keys())
+
+        fbn = BayesNetFragment(self.qbn.bn)
+
+        for node in target.union(evidence):
+            fbn.installAscendants(node)
+
+        self.qbn = qBayesNet(fbn.toBN())
+        self.q_registers = self.qbn.getQuantumRegisters()
+        self.all_qbits = np.ravel(list(self.qbn.n_qb_map.values())).tolist()
+
 
 

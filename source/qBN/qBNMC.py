@@ -520,7 +520,7 @@ class qBayesNet:
         for n_id in internal_nodes:
 
             parent_id_set = self.bn.parents(n_id)
-            parent_qbit_list = list(np.ravel([self.n_qb_map[p_id] 
+            parent_qbit_list = list(np.hstack([self.n_qb_map[p_id] 
                                               for p_id in parent_id_set])) 
             #list containing qubit id of each of the parents in order
 
@@ -532,7 +532,7 @@ class qBayesNet:
                 circuit.barrier()
 
                 for ctrl_qb_id in np.array(parent_qbit_list)[
-                    np.where(np.ravel(list(bin_params.values()))==0)
+                    np.where(np.hstack(list(bin_params.values()))==0)
                     ]:
                     circuit.append(XGate(), qargs=[ctrl_qb_id])
 
@@ -541,7 +541,7 @@ class qBayesNet:
                                         verbose=verbose)
 
                 for ctrl_qb_id in np.array(parent_qbit_list)[
-                    np.where(np.ravel(list(bin_params.values()))==0)
+                    np.where(np.hstack(list(bin_params.values()))==0)
                     ]:
                     circuit.append(XGate(), qargs=[ctrl_qb_id])
 

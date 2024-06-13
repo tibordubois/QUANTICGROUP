@@ -49,11 +49,16 @@ class qInference:
 
         self.qbn = qbn
         self.q_registers = self.qbn.getQuantumRegisters()
-        self.all_qbits = np.ravel(list(self.qbn.n_qb_map.values())).tolist()
+        self.all_qbits = np.hstack(list(self.qbn.n_qb_map.values())).tolist()
         self.evidence = dict()
         self.inference_res = None
         self.max_iter = 1000
         self.log = {"A": 0, "B": 0}
+        self.A = None
+        self.G = None
+
+    def maxIter(self):
+        return self.max_iter
 
     def getA(self) -> Operator:
         """
@@ -328,55 +333,52 @@ class qInference:
 
         return run_res
 
-    def rejectionSampling(self, evidence: dict[Union[str, int]: int],
-                                verbose : int = 0) \
-                                -> dict[Union[str, int]: list[float]]:
+    def makeInference(self) -> dict[Union[str, int]: list[float]]:
         """
         Performs rejection sampling on Quantum Circuit representation of
         Baysian Network
-
-        Parameters
-        ----------
-        evidence: dict[Union[str, int]: int]
-            Dictionary with variable IDs as keys and their state as values
-        num_samples: int = 1000
-            Number of samples
 
         Returns
         -------
         dict[Union[str, int]: list[float]]
             Dictionary with variable names as keys and proability vector as values
-        
+
         """
 
+        if self.A is None or self.G is None: self.getGates()
+
         self.log = {"A": 0, "G": 0}
-
-        evidence_n_id = {self.qbn.bn.nodeId(self.qbn.bn.variable(key)): val
-                         for key, val in evidence.items()}
-        evidence_qbs = self.getEvidenceQuBits(evidence_n_id)
-
-        A = self.getA()
-        G = self.getG(A, evidence_qbs)
 
         res = {node: [0] * self.qbn.bn.variable(node).domainSize()
                for node in self.qbn.n_qb_map.keys()}
 
         for i in range(self.max_iter):
-            sample = self.getSample(A, G, evidence)
+            sample = self.getSample(self.A, self.G, self.evidence)
 
             for node, state in sample.items():
                 res[node][state] += 1.0/self.max_iter
 
-            if verbose > 0: print(f"sample {i} \t = {sample}")
-
         res = {self.qbn.bn.variable(key).name(): val for key, val in res.items()}
-        
+
+        self.inference_res = res
+
         return res
+
+    def getGates(self) -> None:
+        """
+        """
+
+        evidence_n_id = {self.qbn.bn.nodeId(self.qbn.bn.variable(key)): val
+                         for key, val in self.evidence.items()}
+        evidence_qbs = self.getEvidenceQuBits(evidence_n_id)
+
+        self.A = self.getA()
+        self.G = self.getG(self.A, evidence_qbs=evidence_qbs)
 
     def setEvidence(self, evidence: dict[Union[str, int]: int]) -> None:
         """
-        Sets the evidence of the rejection sampler 
-        
+        Sets the evidence of the rejection sampler
+
         Parameters
         ----------
         evidence: dict[Union[str, int]: int]
@@ -387,7 +389,7 @@ class qInference:
 
     def setMaxIter(self, max_iter: int = 1000) -> None:
         """
-        Sets the max iteration of the rejection sampler 
+        Sets the max iteration of the rejection sampler
 
         Parameters
         ----------
@@ -397,13 +399,6 @@ class qInference:
         """
         self.max_iter = max_iter
 
-    def makeInference(self) -> None:
-        """
-        Performs rejection sampling and stores the sampling results in inference_res
-
-        """
-        self.inference_res = self.rejectionSampling(self.evidence)
-
     def posterior(self, node: Union[str, int]) -> Potential:
         """
         Give the probability table of the node variable from sampling results
@@ -412,12 +407,12 @@ class qInference:
         ----------
         node: Union[str, int]
             Variable name or ID
-        
+
         Returns
         -------
         Potential
             pyAgrum.Potential object
-            
+
         """
         name = self.qbn.bn.variable(node).name()
         potential = Potential().add(self.qbn.bn.variable(name))
@@ -441,7 +436,7 @@ class qInference:
 
         self.qbn = qBayesNet(fbn.toBN())
         self.q_registers = self.qbn.getQuantumRegisters()
-        self.all_qbits = np.ravel(list(self.qbn.n_qb_map.values())).tolist()
+        self.all_qbits = np.hstack(list(self.qbn.n_qb_map.values())).tolist()
 
 
 

@@ -1,5 +1,5 @@
 from .qBNMC import qBayesNet
-from .qBNInference import qInference
+from .qBNRejection import qInference
 
 from qiskit import ClassicalRegister, QuantumCircuit, transpile
 from qiskit.converters import circuit_to_dag
@@ -44,15 +44,15 @@ class qRuntime:
         self.A_time = None
         self.G_time = None
 
-    def getGateExecutionTime(self) -> None:
+    def getGateExecutionTime(self, verbose = 0) -> None:
         """
         Stores the execution time of gate A and G
     
         """
-        self.A_time = self.getAtime()
-        self.G_time = self.getGtime()
+        self.A_time = self.getAtime(verbose=verbose)
+        self.G_time = self.getGtime(verbose=verbose)
 
-    def getAtime(self, backend: IBMBackend = None) -> float:
+    def getAtime(self, backend: IBMBackend = None, verbose = 0) -> float:
         """
         Estimates the theoredical runtime of the quantum circuit from given backend in seconds
 
@@ -75,7 +75,6 @@ class qRuntime:
         circuit.compose(A, inplace=True)
 
         transpiled_circuit = transpile(circuit, backend=backend)
-        print(f"A gate transpiled circuit depth: {transpiled_circuit.depth()}")
 
         dag_circuit = circuit_to_dag(transpiled_circuit)
         circuit_depth = dag_circuit.count_ops_longest_path()
@@ -86,10 +85,14 @@ class qRuntime:
         for key, val in circuit_depth.items():
             instruction = next(iter(backend.target[key].values()), None) #to be revisited
             res += instruction.duration * val
-        print(f"A gate execution time: {res} s")
+
+        if verbose > 0:
+            print(f"A gate transpiled circuit depth: {transpiled_circuit.depth()}")    
+            print(f"A gate execution time: {res} s")
+
         return res
 
-    def getGtime(self, backend: IBMBackend = None) -> float:
+    def getGtime(self, backend: IBMBackend = None, verbose = 0) -> float:
         """
         Estimates the theoredical runtime of a Grover iterate from given backend in seconds
 
@@ -118,7 +121,6 @@ class qRuntime:
         circuit.compose(G, inplace=True)
 
         transpiled_circuit = transpile(circuit, backend=backend)
-        print(f"G gate transpiled circuit depth: {transpiled_circuit.depth()}")
 
         dag_circuit = circuit_to_dag(transpiled_circuit)
         circuit_depth = dag_circuit.count_ops_longest_path()
@@ -129,7 +131,11 @@ class qRuntime:
         for key, val in circuit_depth.items():
             instruction = next(iter(backend.target[key].values()), None) #to be revisited
             res += instruction.duration * val
-        print(f"G gate execution time: {res} s")
+        
+        if verbose > 0:
+            print(f"A gate transpiled circuit depth: {transpiled_circuit.depth()}")    
+            print(f"A gate execution time: {res} s")
+    
         return res
 
     def rejectionSamplingRuntime(self) -> float:

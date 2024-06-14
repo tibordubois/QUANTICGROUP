@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qBN.qBNMC &mdash; QBN 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=8d563738"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QBN
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../qBN.html">qBN package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QBN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qBN.qBNMC</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qBN.qBNMC</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">pyAgrum</span> <span class="kn">import</span> <span class="n">BayesNet</span><span class="p">,</span> <span class="n">Instantiation</span><span class="p">,</span> <span class="n">Potential</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span> <span class="c1">#List and Dict are deprecated (python 3.9)</span>
+
+<span class="kn">from</span> <span class="nn">qiskit</span> <span class="kn">import</span> <span class="n">QuantumRegister</span><span class="p">,</span> <span class="n">QuantumCircuit</span><span class="p">,</span> <span class="n">transpile</span>
+<span class="kn">from</span> <span class="nn">qiskit.circuit.library</span> <span class="kn">import</span> <span class="n">RYGate</span><span class="p">,</span> <span class="n">XGate</span>
+<span class="kn">from</span> <span class="nn">qiskit.quantum_info</span> <span class="kn">import</span> <span class="n">Operator</span>
+<span class="c1">#from qiskit.visualization import plot_distribution</span>
+
+<span class="kn">from</span> <span class="nn">qiskit_aer</span> <span class="kn">import</span> <span class="n">AerSimulator</span>
+
+<span class="kn">from</span> <span class="nn">qiskit_ibm_runtime</span> <span class="kn">import</span> <span class="n">SamplerV2</span>
+<span class="kn">from</span> <span class="nn">qiskit_ibm_runtime.fake_provider</span> <span class="kn">import</span> <span class="n">FakeOsaka</span>
+
+
+<div class="viewcode-block" id="qBayesNet">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet">[docs]</a>
+<span class="k">class</span> <span class="nc">qBayesNet</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class used to build a Quantum Circuit representation of a Bayesian Network</span>
+<span class="sd">    Based on the paper:</span>
+<span class="sd">    Quantum circuit representation of Bayesian networks - Sima E. Borujeni</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    bn: BayesNet</span>
+<span class="sd">        pyAgrum Bayesian Network</span>
+<span class="sd">    n_qb_map: dict[int: list[int]]</span>
+<span class="sd">        Dictionary where keys are IDs of variables in bn and values are</span>
+<span class="sd">        the list of IDs of the associated qubits</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    mapNodeToQBit(self) -&gt; dict[int: list[int]]</span>
+<span class="sd">        Maps variables IDs from Baysian Network to a list of qubits IDs</span>
+<span class="sd">        to be implemented in a Quantum Circuit</span>
+
+<span class="sd">    getWidth(self, node: Union[str, int]) -&gt; int:</span>
+<span class="sd">        Give the required number of qubits to represent a variable</span>
+
+<span class="sd">    getBinarizedParameters(self, width_dict: dict[Union[str, int]: int],</span>
+<span class="sd">                                 param_dict: dict[Union[str, int]: int])</span>
+<span class="sd">                                 -&gt; dict[Union[str, int]: list[int]]</span>
+<span class="sd">        Gives the binary representations of the states of a variable</span>
+<span class="sd">        in a Bayesian Network</span>
+
+<span class="sd">    getRootNodes(self) -&gt; set[int]:</span>
+<span class="sd">        Gives the IDs of the root nodes (variables) in the DAG representation</span>
+<span class="sd">        of the Bayesian Network</span>
+
+<span class="sd">    getAllParentSates(self, node: Union[str, int]) \</span>
+<span class="sd">                            -&gt; list[dict[Union[str, int]: int]]:</span>
+<span class="sd">        Gives all the possible parent state combinations of a given variable</span>
+
+<span class="sd">    getQuantumRegisters(self) -&gt; dict[int: QuantumRegister]:</span>
+<span class="sd">        Gives the Quantum Registers used to represent the Bayesian Network</span>
+<span class="sd">        as a Quantum Circuit</span>
+
+<span class="sd">    indicatorFunction(self, binary_list: list[list[int]],</span>
+<span class="sd">                            targets: dict[int, int], verbose: int = 0)</span>
+<span class="sd">                            -&gt; list[bool]:</span>
+<span class="sd">        Gives a list of matches when given a list of binary strings</span>
+<span class="sd">        (represented using lists) and a dictionary of conditions</span>
+<span class="sd">        (eq17) (eq19)</span>
+
+<span class="sd">    getProbability(self, value: int,</span>
+<span class="sd">                         node: Union[str, int],</span>
+<span class="sd">                         qb_id: int,</span>
+<span class="sd">                         params_qb: dict[int, int],</span>
+<span class="sd">                         params_node: dict[Union[str, int]: int] = None,</span>
+<span class="sd">                         verbose: int = 0) -&gt; float:</span>
+<span class="sd">        Gives the probability that the qubit with given ID (in the context of</span>
+<span class="sd">        the whole circuit) equals to the given value conditioned to other</span>
+<span class="sd">        qubits representing the variable and other nodes in the Bayesian Network</span>
+<span class="sd">        (eq18) (eq20)</span>
+
+<span class="sd">    multiQubitRotation(self, circuit: QuantumCircuit,</span>
+<span class="sd">                             node: Union[str, int],</span>
+<span class="sd">                             target_qb: list[int],</span>
+<span class="sd">                             params_qb: dict[int, int],</span>
+<span class="sd">                             params_node: dict[Union[str, int]: int] = None,</span>
+<span class="sd">                             control_qb: list[int] = None,</span>
+<span class="sd">                             verbose: int = 0) -&gt; Operator:</span>
+<span class="sd">        Procedure that adds to the Quantum Circuit a series of rotations</span>
+<span class="sd">        that maps the probabilities of the variable to the qubits representing it</span>
+<span class="sd">        (Fig9) (eq18)</span>
+
+<span class="sd">    buildCircuit(self, verbose: int = 0) -&gt; QuantumCircuit:</span>
+<span class="sd">        Builds the Quantum Circuit representation of Bayesian Network</span>
+
+<span class="sd">    run(self, shots: int = 8192) -&gt; dict[Union[str, int]: dict[int: float]]:</span>
+<span class="sd">        Builds and runs the quantum circuit representation of a bayesian network</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bn</span><span class="p">:</span> <span class="n">BayesNet</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialises the qBaysNet Object </span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        bn : BayesNet</span>
+<span class="sd">            pyAgrum Bayesian Network</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bn</span> <span class="o">=</span> <span class="n">bn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_qb_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapNodeToQBit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+
+<div class="viewcode-block" id="qBayesNet.mapNodeToQBit">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.mapNodeToQBit">[docs]</a>
+    <span class="k">def</span> <span class="nf">mapNodeToQBit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Maps variables IDs from Baysian Network to a list of qubits IDs</span>
+<span class="sd">        to be implemented in a Quantum Circuit</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict[int: list[int]]</span>
+<span class="sd">            Dictionary with variable ID as key and the list of its corresponding</span>
+<span class="sd">            qubit IDs as value</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">qubit_id</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">n_id</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+            <span class="n">res</span><span class="p">[</span><span class="n">n_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getWidth</span><span class="p">(</span><span class="n">n_id</span><span class="p">)):</span>
+                <span class="n">res</span><span class="p">[</span><span class="n">n_id</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qubit_id</span><span class="p">)</span>
+                <span class="n">qubit_id</span> <span class="o">=</span> <span class="n">qubit_id</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="qBayesNet.getWidth">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.getWidth">[docs]</a>
+    <span class="k">def</span> <span class="nf">getWidth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Give the required number of qubits to represent a variable</span>
+<span class="sd">        (eq21)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node: Union[str, int]</span>
+<span class="sd">            Name or id of the corresponding node</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int</span>
+<span class="sd">            Number of qubits required to represent the given variable</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">domain_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="n">domainSize</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">domain_size</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="qBayesNet.getTotNumQBits">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.getTotNumQBits">[docs]</a>
+    <span class="k">def</span> <span class="nf">getTotNumQBits</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span> <span class="c1">#not used</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gives the total number of qubits required to build the quantum circuit</span>
+<span class="sd">        (eq21)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int</span>
+<span class="sd">            Total number of qubits required to build the quantum circuit</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">getWidth</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">nodes</span><span class="p">()],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="qBayesNet.getBinarizedParameters">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.getBinarizedParameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">getBinarizedParameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">width_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="nb">int</span><span class="p">],</span>
+                                     <span class="n">param_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="nb">int</span><span class="p">])</span> \
+                                     <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gives the binary representations of the states of a variable in a</span>
+<span class="sd">        Bayesian Network</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        width_list: dict[Union[str,int]:int]</span>
+<span class="sd">            Dictionary with name of variables as keys and their corresponding widths</span>
+<span class="sd">            as values (c.f. getWidth())</span>
+<span class="sd">        param_dict: dict[Union[str,int]:int]</span>
+<span class="sd">            Dictionary with name of variables as keys and their states as values</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict[str: list[int]]</span>
+<span class="sd">            Dictionary with name of variables as keys and a binary string</span>
+<span class="sd">            (list of 0s and 1s) as values</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">width_dict_id</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">nodeId</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">key</span><span class="p">)):</span> <span class="n">val</span>
+                         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">width_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">param_dict_id</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">nodeId</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">key</span><span class="p">)):</span> <span class="n">val</span>
+                         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">param_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">bin_params_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">param_dict_id</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">bin_params_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">binary_repr</span><span class="p">(</span><span class="n">param_dict_id</span><span class="p">[</span><span class="nb">id</span><span class="p">],</span> <span class="n">width</span><span class="o">=</span><span class="n">width_dict_id</span><span class="p">[</span><span class="nb">id</span><span class="p">]))</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">bin_params_dict</span></div>
+
+
+<div class="viewcode-block" id="qBayesNet.getRootNodes">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.getRootNodes">[docs]</a>
+    <span class="k">def</span> <span class="nf">getRootNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gives the IDs of the root nodes (variables) in the DAG representation of</span>
+<span class="sd">        the Bayesian Network</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        set[int]</span>
+<span class="sd">            Set of integers representing root node IDs</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="nb">id</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">parents</span><span class="p">(</span><span class="nb">id</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="qBayesNet.getAllParentSates">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.getAllParentSates">[docs]</a>
+    <span class="k">def</span> <span class="nf">getAllParentSates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> \
+                                <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="nb">int</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gives all the possible parent state combinations of a given variable</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node: Union[str, int]</span>
+<span class="sd">            Name or id of the corresponding node</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list[dict[Union[str, int]: int]]</span>
+<span class="sd">            List containting dicrionnaries with variable names as keys and their</span>
+<span class="sd">            corresponding state as values</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+        <span class="n">inst</span> <span class="o">=</span> <span class="n">Instantiation</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">cpt</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="n">n_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">nodeId</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">n_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+                <span class="n">inst</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="n">inst</span><span class="o">.</span><span class="n">setFirst</span><span class="p">()</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">inst</span><span class="o">.</span><span class="n">end</span><span class="p">():</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">inst</span><span class="o">.</span><span class="n">todict</span><span class="p">())</span>
+            <span class="n">inst</span><span class="o">.</span><span class="n">inc</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="qBayesNet.getQuantumRegisters">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.getQuantumRegisters">[docs]</a>
+    <span class="k">def</span> <span class="nf">getQuantumRegisters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">:</span> <span class="n">QuantumRegister</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gives the Quantum Registers used to represent the Bayesian Network as</span>
+<span class="sd">        a Quantum Circuit</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict[int: QuantumRegister]</span>
+<span class="sd">            Dictionary with variable IDs as keys and Quantum Registers as values</span>
+<span class="sd">       </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="k">for</span>  <span class="n">n_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+            <span class="n">res</span><span class="p">[</span><span class="n">n_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">QuantumRegister</span><span class="p">(</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">n_id</span><span class="p">)</span><span class="o">.</span><span class="n">domainSize</span><span class="p">()))),</span> <span class="n">n_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="qBayesNet.indicatorFunction">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.indicatorFunction">[docs]</a>
+    <span class="k">def</span> <span class="nf">indicatorFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binary_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
+                                <span class="n">targets</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+                                <span class="n">verbose</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gives a list of matches when given a list of binary strings</span>
+<span class="sd">        (represented using lists) and a dictionary of conditions</span>
+<span class="sd">        (eq17) (eq19)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        binary_list: list[list[int]]</span>
+<span class="sd">            List of lists of 0s and 1s representing the basis states that forms</span>
+<span class="sd">            the superposition state representing a variable in the context of </span>
+<span class="sd">            (eq16)</span>
+<span class="sd">        targets: dict[int, int]</span>
+<span class="sd">            Dictionary with the indices of qubits (relative to the binary list and</span>
+<span class="sd">            not the whole quantum circuit) as keys and their corresponding</span>
+<span class="sd">            binary states as values</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list[bool]</span>
+<span class="sd">            List where True corresponds to a binary string (list of 0s and 1s)</span>
+<span class="sd">            satisfying the condition given by targets, and False otherwise</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">indicatorFunction call: </span><span class="se">\</span>
+<span class="s2">                  binary_list = </span><span class="si">{</span><span class="n">binary_list</span><span class="si">}</span><span class="s2">, </span><span class="se">\</span>
+<span class="s2">                  targets = </span><span class="si">{</span><span class="n">targets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">binary_list</span><span class="p">)</span>
+
+        <span class="n">sorted_target_keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">targets</span><span class="p">))</span>
+        <span class="n">binary_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">binary_list</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;STK = </span><span class="si">{</span><span class="n">sorted_target_keys</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;binary_arr = </span><span class="se">\n</span><span class="si">{</span><span class="n">binary_arr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">binary_arr</span> <span class="o">=</span> <span class="n">binary_arr</span><span class="p">[:,</span><span class="n">sorted_target_keys</span><span class="p">]</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="p">[</span><span class="n">targets</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">sorted_target_keys</span><span class="p">]</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">binary_arr</span> <span class="o">==</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="qBayesNet.getProbability">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.getProbability">[docs]</a>
+    <span class="k">def</span> <span class="nf">getProbability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> 
+                             <span class="n">node</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> 
+                             <span class="n">qb_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> 
+                             <span class="n">param_qbs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> 
+                             <span class="n">param_nodes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+                             <span class="n">verbose</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gives the probability that the qb_id qubit state equals to the given value conditioned to other qubits</span>
+<span class="sd">        representing the variable and other nodes in the Bayesian Network</span>
+<span class="sd">        (eq18) (eq20)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        value: int</span>
+<span class="sd">            0 or 1</span>
+<span class="sd">        node: Union[str, int]</span>
+<span class="sd">            Name or id of the corresponding variable</span>
+<span class="sd">        qb_id: int</span>
+<span class="sd">            Global index of the qubit in the Quantum Circuit</span>
+<span class="sd">        param_qbs: dict[int, int]</span>
+<span class="sd">            Dictionary with global qubit index as keys and quantum state as values,</span>
+<span class="sd">            the qubits are representing the same variable as the main qubit</span>
+<span class="sd">        param_nodes: dict[Union[str, int]: int] = None</span>
+<span class="sd">            Dictionary with variable name as keys and their state as values</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Value of the probability measure</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">getP1 call : </span><span class="se">\</span>
+<span class="s2">                  node = </span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">, </span><span class="se">\</span>
+<span class="s2">                  qb_id = </span><span class="si">{</span><span class="n">qb_id</span><span class="si">}</span><span class="s2">, </span><span class="se">\</span>
+<span class="s2">                  param_nodes = </span><span class="si">{</span><span class="n">param_nodes</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">param_nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">param_nodes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="n">probability_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">cpt</span><span class="p">(</span><span class="n">node</span><span class="p">)[</span><span class="n">param_nodes</span><span class="p">]</span> <span class="c1">#of BN</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getWidth</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="n">number_of_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">cpt</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">binary_state_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">binary_repr</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_states</span><span class="p">)]</span> <span class="c1">#list of all states in binary</span>
+
+        <span class="n">qb_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_qb_map</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">qb_id</span><span class="p">)</span> <span class="c1">#relative qubit number</span>
+        <span class="n">params_qb_number_dict</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_qb_map</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">):</span> <span class="n">value</span> 
+                                 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">param_qbs</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+        <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;probability_list = </span><span class="si">{</span><span class="n">probability_list</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;binary_state_list = </span><span class="si">{</span><span class="n">binary_state_list</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;qb_id = </span><span class="si">{</span><span class="n">qb_id</span><span class="si">}</span><span class="s2">, qb_number = </span><span class="si">{</span><span class="n">qb_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;param_qbs = </span><span class="si">{</span><span class="n">param_qbs</span><span class="si">}</span><span class="s2">, </span><span class="se">\</span>
+<span class="s2">                  params_qb_number_dict = </span><span class="si">{</span><span class="n">params_qb_number_dict</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+        <span class="n">I_qb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indicatorFunction</span><span class="p">(</span><span class="n">binary_state_list</span><span class="p">,</span> 
+                                      <span class="p">{</span><span class="o">**</span><span class="p">{</span><span class="n">qb_number</span><span class="p">:</span> <span class="n">value</span><span class="p">},</span> 
+                                       <span class="o">**</span><span class="n">params_qb_number_dict</span><span class="p">},</span> 
+                                      <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;indicator = </span><span class="si">{</span><span class="n">I_qb</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">probability_list</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">I_qb</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="qBayesNet.multiQubitRotation">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.multiQubitRotation">[docs]</a>
+    <span class="k">def</span> <span class="nf">multiQubitRotation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">circuit</span><span class="p">:</span> <span class="n">QuantumCircuit</span><span class="p">,</span> 
+                                 <span class="n">node</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> 
+                                 <span class="n">target_qbs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> 
+                                 <span class="n">param_qbs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> 
+                                 <span class="n">param_nodes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+                                 <span class="n">control_qbs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+                                 <span class="n">verbose</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Operator</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds to the Quantum Circuit a series of rotations that </span>
+<span class="sd">        maps the probabilities of the variable to their corresponding qubits        (Fig9) (eq18)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ---------</span>
+<span class="sd">        circuit: QuantumCircuit</span>
+<span class="sd">            Quantum Circuit to which the rotations are added</span>
+<span class="sd">        node: Union[str, int]</span>
+<span class="sd">            Name or id of the corresponding node</span>
+<span class="sd">        target_qbs: list[int]</span>
+<span class="sd">            List containing the IDs of the qubits representing the variable in </span>
+<span class="sd">            the circuit</span>
+<span class="sd">        param_qbs: dict[int, int]</span>
+<span class="sd">            Dictionary with qubit id as keys and their quantum state as values </span>
+<span class="sd">            (used for recursion)</span>
+<span class="sd">        param_nodes: dict[Union[str, int]: int]</span>
+<span class="sd">            Dictionary with variable name as keys and their state as values</span>
+<span class="sd">        control_qbs:</span>
+<span class="sd">            List containing the IDs of qubits representing parent nodes of </span>
+<span class="sd">            the variable in DAG</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Operator</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">multiQubitRotation call : node = </span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">, </span><span class="se">\</span>
+<span class="s2">                  target_qb = </span><span class="si">{</span><span class="n">target_qbs</span><span class="si">}</span><span class="s2">, param_qbs = </span><span class="si">{</span><span class="n">param_qbs</span><span class="si">}</span><span class="s2">, </span><span class="se">\</span>
+<span class="s2">                  param_nodes = </span><span class="si">{</span><span class="n">param_nodes</span><span class="si">}</span><span class="s2">, control_qbs = </span><span class="si">{</span><span class="n">control_qbs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">param_nodes</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">param_nodes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">control_qbs</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">control_qbs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+        <span class="n">target_copy</span> <span class="o">=</span> <span class="n">target_qbs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="n">params_qb_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">param_qbs</span><span class="p">))</span>
+
+        <span class="n">P1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getProbability</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">target_copy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> 
+                                 <span class="n">param_qbs</span><span class="p">,</span> <span class="n">param_nodes</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="n">P0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getProbability</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">target_copy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> 
+                                 <span class="n">param_qbs</span><span class="p">,</span> <span class="n">param_nodes</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="k">if</span> <span class="n">P0</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">P1</span><span class="o">/</span><span class="n">P0</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;P1 = </span><span class="si">{</span><span class="n">P1</span><span class="si">}</span><span class="s2">, P0 = </span><span class="si">{</span><span class="n">P0</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;theta = </span><span class="si">{</span><span class="n">theta</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">RY</span> <span class="o">=</span> <span class="n">RYGate</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">XGate</span><span class="p">()</span>
+
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">target_copy</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c1">#base case</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_qbs</span><span class="p">)</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">control_qbs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">RY</span> <span class="o">=</span> <span class="n">RY</span><span class="o">.</span><span class="n">control</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">param_qbs</span><span class="p">)</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">control_qbs</span><span class="p">))</span>
+
+            <span class="n">qargs</span> <span class="o">=</span> <span class="n">control_qbs</span> <span class="o">+</span> <span class="n">params_qb_list</span> <span class="o">+</span> <span class="p">[</span><span class="n">target_copy</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="n">circuit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">RY</span><span class="p">,</span> <span class="n">qargs</span> <span class="o">=</span> <span class="n">qargs</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span> <span class="c1">#recursion</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_qbs</span><span class="p">)</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">control_qbs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">RY</span> <span class="o">=</span> <span class="n">RY</span><span class="o">.</span><span class="n">control</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">param_qbs</span><span class="p">)</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">control_qbs</span><span class="p">))</span>
+                <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">control</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">param_qbs</span><span class="p">)</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">control_qbs</span><span class="p">))</span>
+
+            <span class="n">qargs</span> <span class="o">=</span> <span class="n">control_qbs</span> <span class="o">+</span> <span class="n">params_qb_list</span> <span class="o">+</span> <span class="p">[</span><span class="n">target_copy</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="n">circuit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">RY</span><span class="p">,</span> <span class="n">qargs</span> <span class="o">=</span> <span class="n">qargs</span><span class="p">)</span>
+
+            <span class="n">popped_qb</span> <span class="o">=</span> <span class="n">target_copy</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">multiQubitRotation</span><span class="p">(</span><span class="n">circuit</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">target_copy</span><span class="p">,</span> 
+                                    <span class="p">{</span><span class="o">**</span><span class="n">param_qbs</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="n">popped_qb</span><span class="p">:</span> <span class="mi">1</span><span class="p">}},</span> 
+                                    <span class="n">param_nodes</span><span class="p">,</span> <span class="n">control_qbs</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
+            <span class="n">qargs</span> <span class="o">=</span> <span class="n">control_qbs</span> <span class="o">+</span> <span class="n">params_qb_list</span> <span class="o">+</span> <span class="p">[</span><span class="n">popped_qb</span><span class="p">]</span>
+            <span class="n">circuit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">qargs</span> <span class="o">=</span> <span class="n">qargs</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">multiQubitRotation</span><span class="p">(</span><span class="n">circuit</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">target_copy</span><span class="p">,</span> 
+                                    <span class="p">{</span><span class="o">**</span><span class="n">param_qbs</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="n">popped_qb</span><span class="p">:</span> <span class="mi">0</span><span class="p">}},</span> 
+                                    <span class="n">param_nodes</span><span class="p">,</span> <span class="n">control_qbs</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
+            <span class="n">qargs</span> <span class="o">=</span> <span class="n">control_qbs</span> <span class="o">+</span> <span class="n">params_qb_list</span> <span class="o">+</span> <span class="p">[</span><span class="n">popped_qb</span><span class="p">]</span>
+            <span class="n">circuit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">qargs</span> <span class="o">=</span> <span class="n">qargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">circuit</span><span class="o">.</span><span class="n">draw</span><span class="p">())</span>
+
+        <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="qBayesNet.buildCircuit">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.buildCircuit">[docs]</a>
+    <span class="k">def</span> <span class="nf">buildCircuit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">add_measure</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                           <span class="n">verbose</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuantumCircuit</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Builds the Quantum Circuit representation of Bayesian Network</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        add_measure: bool = True</span>
+<span class="sd">            Adds measurement gate for every qubit at the end of the circuit</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        QuantumCircuit</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;call buildCircuit&quot;</span><span class="p">)</span>
+
+        <span class="n">q_reg_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getQuantumRegisters</span><span class="p">()</span>
+        <span class="n">circuit</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">q_reg_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+
+        <span class="n">root_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getRootNodes</span><span class="p">()</span>
+        <span class="n">internal_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">root_nodes</span><span class="p">)</span>
+        <span class="n">internal_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n_id</span> <span class="k">for</span> <span class="n">n_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">topologicalOrder</span><span class="p">()</span> <span class="k">if</span> <span class="n">n_id</span> <span class="ow">in</span> <span class="n">internal_nodes</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">n_id</span> <span class="ow">in</span> <span class="n">root_nodes</span><span class="p">:</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">multiQubitRotation</span><span class="p">(</span><span class="n">circuit</span><span class="p">,</span> <span class="n">n_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_qb_map</span><span class="p">[</span><span class="n">n_id</span><span class="p">],</span> <span class="p">{},</span> 
+                                    <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">n_id</span> <span class="ow">in</span> <span class="n">internal_nodes</span><span class="p">:</span>
+
+            <span class="n">parent_id_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">parents</span><span class="p">(</span><span class="n">n_id</span><span class="p">)</span>
+            <span class="n">parent_qbit_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">n_qb_map</span><span class="p">[</span><span class="n">p_id</span><span class="p">]</span> 
+                                              <span class="k">for</span> <span class="n">p_id</span> <span class="ow">in</span> <span class="n">parent_id_set</span><span class="p">]))</span> 
+            <span class="c1">#list containing qubit id of each of the parents in order</span>
+
+            <span class="k">for</span> <span class="n">params_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAllParentSates</span><span class="p">(</span><span class="n">n_id</span><span class="p">):</span> <span class="c1">#params is dict</span>
+
+                <span class="n">width_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">p_id</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">getWidth</span><span class="p">(</span><span class="n">p_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">p_id</span> <span class="ow">in</span> <span class="n">parent_id_set</span><span class="p">}</span>
+                <span class="n">bin_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getBinarizedParameters</span><span class="p">(</span><span class="n">width_dict</span><span class="p">,</span> <span class="n">params_dict</span><span class="p">)</span>
+
+                <span class="n">circuit</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
+
+                <span class="k">for</span> <span class="n">ctrl_qb_id</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parent_qbit_list</span><span class="p">)[</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">bin_params</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="p">]:</span>
+                    <span class="n">circuit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">XGate</span><span class="p">(),</span> <span class="n">qargs</span><span class="o">=</span><span class="p">[</span><span class="n">ctrl_qb_id</span><span class="p">])</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">multiQubitRotation</span><span class="p">(</span><span class="n">circuit</span><span class="p">,</span> <span class="n">n_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_qb_map</span><span class="p">[</span><span class="n">n_id</span><span class="p">],</span> <span class="p">{},</span> 
+                                        <span class="n">params_dict</span><span class="p">,</span> <span class="n">parent_qbit_list</span><span class="p">,</span> 
+                                        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">ctrl_qb_id</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parent_qbit_list</span><span class="p">)[</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">bin_params</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="p">]:</span>
+                    <span class="n">circuit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">XGate</span><span class="p">(),</span> <span class="n">qargs</span><span class="o">=</span><span class="p">[</span><span class="n">ctrl_qb_id</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">add_measure</span><span class="p">:</span>
+            <span class="n">circuit</span><span class="o">.</span><span class="n">measure_all</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">circuit</span></div>
+
+
+<div class="viewcode-block" id="qBayesNet.aerSimulation">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.aerSimulation">[docs]</a>
+    <span class="k">def</span> <span class="nf">aerSimulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">circuit</span><span class="p">:</span> <span class="n">QuantumCircuit</span><span class="p">,</span>
+                          <span class="n">shots</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Builds and runs quantum circuit from parameter</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ---------</span>
+<span class="sd">        circuit: QuantumCircuit</span>
+<span class="sd">            Qunatum Circuit to be run</span>
+<span class="sd">        optimisation_level: int = None</span>
+<span class="sd">            Optimisation level for transpile fuction ranges from 0 to 3</span>
+<span class="sd">        shots: int = 10000</span>
+<span class="sd">            Number of times to be run</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict[Union[str, int]: Potential]</span>
+<span class="sd">            Dictionary with variable names as keys, and corresponding their</span>
+<span class="sd">            probability vectors as values</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">backend_aer</span> <span class="o">=</span> <span class="n">AerSimulator</span><span class="p">()</span>
+        <span class="n">sampler_aer</span> <span class="o">=</span> <span class="n">SamplerV2</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">backend_aer</span><span class="p">)</span>
+        <span class="n">circuit_aer</span> <span class="o">=</span> <span class="n">transpile</span><span class="p">(</span><span class="n">circuit</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend_aer</span><span class="p">)</span>
+        <span class="n">job_aer</span> <span class="o">=</span> <span class="n">sampler_aer</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="n">circuit_aer</span><span class="p">],</span> <span class="n">shots</span><span class="o">=</span><span class="n">shots</span><span class="p">)</span>
+        <span class="n">result_aer</span> <span class="o">=</span> <span class="n">job_aer</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+        <span class="n">counts_aer</span> <span class="o">=</span> <span class="n">result_aer</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">meas</span><span class="o">.</span><span class="n">get_counts</span><span class="p">()</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">n_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_qb_map</span><span class="p">[</span><span class="n">n_id</span><span class="p">])</span>
+            <span class="n">probability_vector</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+            <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">n_id</span><span class="p">)</span><span class="o">.</span><span class="n">domainSize</span><span class="p">()):</span>
+                <span class="n">pattern</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">binary_repr</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">)</span>
+                <span class="n">matches</span> <span class="o">=</span> <span class="p">[</span><span class="n">val</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">counts_aer</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                           <span class="k">if</span> <span class="n">key</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">n_qb_map</span><span class="p">[</span><span class="n">n_id</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_qb_map</span><span class="p">[</span><span class="n">n_id</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                           <span class="o">==</span> <span class="n">pattern</span><span class="p">]</span>
+                <span class="n">probability_vector</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span><span class="o">/</span><span class="n">shots</span><span class="p">)</span>
+
+            <span class="n">res</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">n_id</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="p">()]</span> <span class="o">=</span> <span class="n">probability_vector</span>
+
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="qBayesNet.runBN">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.runBN">[docs]</a>
+    <span class="k">def</span> <span class="nf">runBN</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shots</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="n">Potential</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Builds and runs the quantum circuit representation of a bayesian network</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        shots: int = 10000</span>
+<span class="sd">            Number of times to be run</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict[Union[str, int]: Potential]</span>
+<span class="sd">            Dictionary with variable names as keys, and corresponding Potentail as </span>
+<span class="sd">            values</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">qbn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buildCircuit</span><span class="p">()</span>
+        <span class="n">run_res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aerSimulation</span><span class="p">(</span><span class="n">qbn</span><span class="p">,</span> <span class="n">shots</span><span class="o">=</span><span class="n">shots</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">n_id</span><span class="p">,</span> <span class="n">p_vect</span> <span class="ow">in</span> <span class="n">run_res</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">portential</span> <span class="o">=</span> <span class="n">Potential</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">n_id</span><span class="p">))</span>
+            <span class="n">portential</span><span class="o">.</span><span class="n">fillWith</span><span class="p">(</span><span class="n">p_vect</span><span class="p">)</span>
+            <span class="n">res</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">n_id</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="p">()]</span> <span class="o">=</span> <span class="n">portential</span>
+
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="qBayesNet.getRMSPE">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.getRMSPE">[docs]</a>
+    <span class="k">def</span> <span class="nf">getRMSPE</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+</div>
+
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Tibor Dubois, Thierry Rioual, Mehmet Gunes.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

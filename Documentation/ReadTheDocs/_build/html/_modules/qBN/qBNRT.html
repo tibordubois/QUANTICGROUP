@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qBN.qBNRT &mdash; QBN 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=8d563738"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QBN
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../qBN.html">qBN package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QBN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qBN.qBNRT</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qBN.qBNRT</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">qBN.qBNMC</span> <span class="kn">import</span> <span class="n">qBayesNet</span>
+<span class="kn">from</span> <span class="nn">qBN.qBNRejection</span> <span class="kn">import</span> <span class="n">qInference</span>
+
+<span class="kn">from</span> <span class="nn">qiskit</span> <span class="kn">import</span> <span class="n">ClassicalRegister</span><span class="p">,</span> <span class="n">QuantumCircuit</span><span class="p">,</span> <span class="n">transpile</span>
+<span class="kn">from</span> <span class="nn">qiskit.converters</span> <span class="kn">import</span> <span class="n">circuit_to_dag</span>
+
+<span class="kn">from</span> <span class="nn">qiskit_aer</span> <span class="kn">import</span> <span class="n">AerSimulator</span>
+
+<span class="kn">from</span> <span class="nn">qiskit.quantum_info</span> <span class="kn">import</span> <span class="n">Operator</span>
+
+<span class="kn">from</span> <span class="nn">qiskit_ibm_runtime.ibm_backend</span> <span class="kn">import</span> <span class="n">IBMBackend</span>
+
+<span class="kn">from</span> <span class="nn">pyAgrum</span> <span class="kn">import</span> <span class="n">LazyPropagation</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+
+<div class="viewcode-block" id="qRuntime">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRT.qRuntime">[docs]</a>
+<span class="k">class</span> <span class="nc">qRuntime</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class used to evaluate the thoeretical time of execution of a quantum sampler on a quantum device</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qinf</span><span class="p">:</span> <span class="n">qInference</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="n">IBMBackend</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialises the qBaysNet Object </span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        qinf: qInference</span>
+<span class="sd">            Quantum rejecetion sampler</span>
+<span class="sd">        backend: IBMBackend</span>
+<span class="sd">            Backend to get the execution time on quantum harware</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qinf</span> <span class="o">=</span> <span class="n">qinf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_backend</span> <span class="o">=</span> <span class="n">backend</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">A_time</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">G_time</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="qRuntime.getGateExecutionTime">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRT.qRuntime.getGateExecutionTime">[docs]</a>
+    <span class="k">def</span> <span class="nf">getGateExecutionTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stores the execution time of gate A and G</span>
+<span class="sd">    </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">A_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAtime</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">G_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getGtime</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="qRuntime.getAtime">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRT.qRuntime.getAtime">[docs]</a>
+    <span class="k">def</span> <span class="nf">getAtime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="n">IBMBackend</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Estimates the theoredical runtime of the quantum circuit from given backend in seconds</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ---------</span>
+<span class="sd">        backend: AerSimulator = None</span>
+<span class="sd">            Backend to transpile the quantum circuit (default set to AerSimulator)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Estimate of the circuit runtime in seconds</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">backend</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span> <span class="n">backend</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_backend</span>
+
+        <span class="n">A</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qinf</span><span class="o">.</span><span class="n">getA</span><span class="p">()</span> <span class="c1">#gate depth may be shorter due to optimisation</span>
+
+        <span class="n">circuit</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qinf</span><span class="o">.</span><span class="n">q_registers</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+        <span class="n">circuit</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">transpiled_circuit</span> <span class="o">=</span> <span class="n">transpile</span><span class="p">(</span><span class="n">circuit</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">)</span>
+
+        <span class="n">dag_circuit</span> <span class="o">=</span> <span class="n">circuit_to_dag</span><span class="p">(</span><span class="n">transpiled_circuit</span><span class="p">)</span>
+        <span class="n">circuit_depth</span> <span class="o">=</span> <span class="n">dag_circuit</span><span class="o">.</span><span class="n">count_ops_longest_path</span><span class="p">()</span>
+        <span class="n">circuit_depth</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;barrier&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">circuit_depth</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">instruction</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">backend</span><span class="o">.</span><span class="n">target</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="kc">None</span><span class="p">)</span> <span class="c1">#to be revisited</span>
+            <span class="n">res</span> <span class="o">+=</span> <span class="n">instruction</span><span class="o">.</span><span class="n">duration</span> <span class="o">*</span> <span class="n">val</span>
+
+        <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;A gate transpiled circuit depth: </span><span class="si">{</span><span class="n">transpiled_circuit</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>    
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;A gate execution time: </span><span class="si">{</span><span class="n">res</span><span class="si">}</span><span class="s2"> s&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="qRuntime.getGtime">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRT.qRuntime.getGtime">[docs]</a>
+    <span class="k">def</span> <span class="nf">getGtime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="n">IBMBackend</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Estimates the theoredical runtime of a Grover iterate from given backend in seconds</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ---------</span>
+<span class="sd">        backend: AerSimulator = None</span>
+<span class="sd">            Backend to transpile the quantum circuit (default set to AerSimulator)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Estimate of the circuit runtime in seconds</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">backend</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span> <span class="n">backend</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_backend</span>
+
+        <span class="n">evidence_n_id</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">qinf</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">nodeId</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qinf</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">key</span><span class="p">)):</span> <span class="n">val</span>
+                         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">qinf</span><span class="o">.</span><span class="n">evidence</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        
+        <span class="n">evidence_qbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qinf</span><span class="o">.</span><span class="n">getEvidenceQuBits</span><span class="p">(</span><span class="n">evidence_n_id</span><span class="p">)</span>
+
+        <span class="n">A</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qinf</span><span class="o">.</span><span class="n">getA</span><span class="p">()</span> <span class="c1">#gate depth may be shorter due to optimisation</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qinf</span><span class="o">.</span><span class="n">getG</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">evidence_qbs</span><span class="o">=</span><span class="n">evidence_qbs</span><span class="p">)</span>
+
+        <span class="n">circuit</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qinf</span><span class="o">.</span><span class="n">q_registers</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+        <span class="n">circuit</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">transpiled_circuit</span> <span class="o">=</span> <span class="n">transpile</span><span class="p">(</span><span class="n">circuit</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">)</span>
+
+        <span class="n">dag_circuit</span> <span class="o">=</span> <span class="n">circuit_to_dag</span><span class="p">(</span><span class="n">transpiled_circuit</span><span class="p">)</span>
+        <span class="n">circuit_depth</span> <span class="o">=</span> <span class="n">dag_circuit</span><span class="o">.</span><span class="n">count_ops_longest_path</span><span class="p">()</span>
+        <span class="n">circuit_depth</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;barrier&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">circuit_depth</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">instruction</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">backend</span><span class="o">.</span><span class="n">target</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="kc">None</span><span class="p">)</span> <span class="c1">#to be revisited</span>
+            <span class="n">res</span> <span class="o">+=</span> <span class="n">instruction</span><span class="o">.</span><span class="n">duration</span> <span class="o">*</span> <span class="n">val</span>
+        
+        <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;A gate transpiled circuit depth: </span><span class="si">{</span><span class="n">transpiled_circuit</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>    
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;A gate execution time: </span><span class="si">{</span><span class="n">res</span><span class="si">}</span><span class="s2"> s&quot;</span><span class="p">)</span>
+    
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="qRuntime.rejectionSamplingRuntime">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRT.qRuntime.rejectionSamplingRuntime">[docs]</a>
+    <span class="k">def</span> <span class="nf">rejectionSamplingRuntime</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Uses gate execution time from before to compute the total time of the rejection sampling process </span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">A_time</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">G_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">getGateExecutionTime</span><span class="p">()</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">res</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qinf</span><span class="o">.</span><span class="n">log</span><span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">A_time</span>
+        <span class="n">res</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qinf</span><span class="o">.</span><span class="n">log</span><span class="p">[</span><span class="s2">&quot;G&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">G_time</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="qRuntime.compareInference">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRT.qRuntime.compareInference">[docs]</a>
+    <span class="k">def</span> <span class="nf">compareInference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ie</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compares 2 inference by plotting all the points from qInference and ie</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">bn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qinf</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">bn</span>
+
+        <span class="k">if</span> <span class="n">ie</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ie</span> <span class="o">=</span> <span class="n">LazyPropagation</span><span class="p">(</span><span class="n">bn</span><span class="p">)</span>
+            <span class="n">ie</span><span class="o">.</span><span class="n">setEvidence</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qinf</span><span class="o">.</span><span class="n">evidence</span><span class="p">)</span>
+            <span class="n">ie</span><span class="o">.</span><span class="n">makeInference</span><span class="p">()</span>
+
+        <span class="n">exact</span><span class="o">=</span><span class="p">[]</span>
+        <span class="n">appro</span><span class="o">=</span><span class="p">[]</span>
+        <span class="n">errmax</span><span class="o">=</span><span class="mi">0</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">bn</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+            <span class="c1"># potentials as list</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">ie</span><span class="o">.</span><span class="n">posterior</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+            <span class="n">exact</span> <span class="o">+=</span> <span class="n">ie</span><span class="o">.</span><span class="n">posterior</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="n">appro</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qinf</span><span class="o">.</span><span class="n">posterior</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="n">errmax</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">errmax</span><span class="p">,</span>
+                    <span class="p">(</span><span class="n">ie</span><span class="o">.</span><span class="n">posterior</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">qinf</span><span class="o">.</span><span class="n">posterior</span><span class="p">(</span><span class="n">node</span><span class="p">))</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    
+        <span class="k">if</span> <span class="n">errmax</span> <span class="o">&lt;</span> <span class="mf">1e-10</span><span class="p">:</span> <span class="n">errmax</span><span class="o">=</span><span class="mi">0</span>
+        <span class="k">if</span> <span class="n">ax</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">Figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span> <span class="c1"># default axis for plt</span>
+        
+           
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">exact</span><span class="p">,</span><span class="n">appro</span><span class="p">,</span><span class="s1">&#39;ro&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> vs </span><span class="si">{}</span><span class="se">\n</span><span class="s2"> Max iter </span><span class="si">{}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">Max error </span><span class="si">{:2.4}</span><span class="s2"> in </span><span class="si">{:2.4}</span><span class="s2"> seconds&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">ie</span><span class="p">))</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="c1"># name of first inference</span>
+            <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qinf</span><span class="p">))</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">2</span><span class="p">],</span> <span class="c1"># name of second inference</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qinf</span><span class="o">.</span><span class="n">max_iter</span><span class="p">,</span>
+            <span class="n">errmax</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rejectionSamplingRuntime</span><span class="p">())</span>
+            <span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Tibor Dubois, Thierry Rioual, Mehmet Gunes.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

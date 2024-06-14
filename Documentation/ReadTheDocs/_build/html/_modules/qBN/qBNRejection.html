@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qBN.qBNRejection &mdash; QBN 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=8d563738"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QBN
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../qBN.html">qBN package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QBN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qBN.qBNRejection</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qBN.qBNRejection</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">qBN.qBNMC</span> <span class="kn">import</span> <span class="n">qBayesNet</span> <span class="c1">#relative import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span> <span class="c1">#List and Dict are deprecated (python 3.9)</span>
+
+<span class="kn">from</span> <span class="nn">qiskit</span> <span class="kn">import</span> <span class="n">ClassicalRegister</span><span class="p">,</span> <span class="n">QuantumCircuit</span>
+<span class="kn">from</span> <span class="nn">qiskit.circuit.library</span> <span class="kn">import</span> <span class="n">XGate</span><span class="p">,</span> <span class="n">ZGate</span>
+<span class="kn">from</span> <span class="nn">qiskit.quantum_info</span> <span class="kn">import</span> <span class="n">Operator</span>
+
+<span class="kn">import</span> <span class="nn">scipy.linalg</span> <span class="c1">#for qiskit transpile function</span>
+
+<span class="kn">from</span> <span class="nn">pyAgrum</span> <span class="kn">import</span> <span class="n">Potential</span><span class="p">,</span> <span class="n">BayesNetFragment</span>
+
+
+
+<div class="viewcode-block" id="qInference">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRejection.qInference">[docs]</a>
+<span class="k">class</span> <span class="nc">qInference</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class used to perform inference via rejection sampling from a Quantum Circuit</span>
+<span class="sd">    representation of a Bayesian Network</span>
+<span class="sd">    Based on the paper:</span>
+<span class="sd">    Quantum Inference on Bayesian Networks - Guang Hao Low</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    qbn: qBayesNet</span>
+<span class="sd">        Quantum Baysien Network object</span>
+<span class="sd">    q_registers: dict[int: QuantumRegister]</span>
+<span class="sd">        Quantum Registers used to build the rotation gates</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    getA(self) -&gt; Operator:</span>
+<span class="sd">        Gives the Operator object represenation of the Quantum Circuit representing</span>
+<span class="sd">        the Baysian Network</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qbn</span><span class="p">:</span> <span class="n">qBayesNet</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialises the qInference Object </span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        qbn : qBayesNet</span>
+<span class="sd">            Quantum Bayesian Network</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">qbn</span> <span class="o">=</span> <span class="n">qbn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_registers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">getQuantumRegisters</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_qbits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">n_qb_map</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">evidence</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inference_res</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="mi">1000</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;A&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">G</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="qInference.maxIter">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRejection.qInference.maxIter">[docs]</a>
+    <span class="k">def</span> <span class="nf">maxIter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span></div>
+
+
+<div class="viewcode-block" id="qInference.getA">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRejection.qInference.getA">[docs]</a>
+    <span class="k">def</span> <span class="nf">getA</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Operator</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gives the quantum sample preparation Operator object</span>
+<span class="sd">        Operator of the Quantum Circuit representing the Baysian Network</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Operator</span>
+<span class="sd">            Quantum gate A</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">circuit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">buildCircuit</span><span class="p">(</span><span class="n">add_measure</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">circuit</span> <span class="o">=</span> <span class="n">circuit</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span>
+
+        <span class="n">A</span> <span class="o">=</span> <span class="n">Operator</span><span class="p">(</span><span class="n">circuit</span><span class="p">)</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">to_instruction</span><span class="p">()</span>
+        <span class="n">A</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;A&#39;</span>
+        <span class="k">return</span> <span class="n">A</span></div>
+
+
+<div class="viewcode-block" id="qInference.getAdjoint">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRejection.qInference.getAdjoint">[docs]</a>
+    <span class="k">def</span> <span class="nf">getAdjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">M</span><span class="p">:</span> <span class="n">Operator</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gives the adjoint operator of M</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        M: Operator</span>
+<span class="sd">            Operator to be transformed</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Operator</span>
+<span class="sd">            M adjoint</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">M_label</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">label</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">Operator</span><span class="p">(</span><span class="n">M</span><span class="o">.</span><span class="n">adjoint</span><span class="p">())</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">to_instruction</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">M_label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="n">M</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">M_label</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\u2020</span><span class="s1">&#39;</span>
+        <span class="k">return</span> <span class="n">M</span></div>
+
+
+<div class="viewcode-block" id="qInference.getB">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRejection.qInference.getB">[docs]</a>
+    <span class="k">def</span> <span class="nf">getB</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evidence_qbs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Operator</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gives the B gate of the phase flip operator (eq7)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        evidence_qbs: dict[int, int]</span>
+<span class="sd">            Dictionary with qubit IDs as keys and their quantum state as values</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Operator</span>
+<span class="sd">            Quantum gate B</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">circuit</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_registers</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+
+        <span class="k">for</span> <span class="n">qb_id</span><span class="p">,</span> <span class="n">qb_state</span> <span class="ow">in</span> <span class="n">evidence_qbs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">qb_state</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">circuit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">XGate</span><span class="p">(),</span> <span class="p">[</span><span class="n">qb_id</span><span class="p">])</span>
+
+        <span class="n">circuit</span> <span class="o">=</span> <span class="n">circuit</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span>
+
+        <span class="n">B</span> <span class="o">=</span> <span class="n">Operator</span><span class="p">(</span><span class="n">circuit</span><span class="p">)</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">B</span><span class="o">.</span><span class="n">to_instruction</span><span class="p">()</span>
+        <span class="n">B</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;B&#39;</span>
+        <span class="k">return</span> <span class="n">B</span></div>
+
+
+<div class="viewcode-block" id="qInference.getZ">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRejection.qInference.getZ">[docs]</a>
+    <span class="k">def</span> <span class="nf">getZ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evidence_qbs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Operator</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gives the Z gate of the phase flip operator (eq7)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        evidence_qbs: dict[int, int]</span>
+<span class="sd">            Dictionary with qubit IDs as keys and their quantum state as values</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Operator</span>
+<span class="sd">            Quantum gate Z</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">circuit</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_registers</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+
+        <span class="n">rotation</span> <span class="o">=</span> <span class="n">ZGate</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">evidence_qbs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">rotation</span> <span class="o">=</span> <span class="n">rotation</span><span class="o">.</span><span class="n">control</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">evidence_qbs</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">circuit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rotation</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">evidence_qbs</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+        <span class="n">circuit</span> <span class="o">=</span> <span class="n">circuit</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span>
+
+        <span class="n">Z</span> <span class="o">=</span> <span class="n">Operator</span><span class="p">(</span><span class="n">circuit</span><span class="p">)</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="n">Z</span><span class="o">.</span><span class="n">to_instruction</span><span class="p">()</span>
+        <span class="n">Z</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Z&#39;</span>
+        <span class="k">return</span> <span class="n">Z</span></div>
+
+
+<div class="viewcode-block" id="qInference.getS">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRejection.qInference.getS">[docs]</a>
+    <span class="k">def</span> <span class="nf">getS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evidence_qbs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Operator</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gives the phase flip operator (eq7)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        evidence_qbs: dict[int, int]</span>
+<span class="sd">            Dictionary with qubit IDs as keys and their quantum state as values</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Operator</span>
+<span class="sd">            Quantum gate S</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">circuit</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_registers</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+
+        <span class="n">B</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getB</span><span class="p">(</span><span class="n">evidence_qbs</span><span class="p">)</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getZ</span><span class="p">(</span><span class="n">evidence_qbs</span><span class="p">)</span>
+
+        <span class="n">circuit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">qargs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">all_qbits</span><span class="p">)</span>
+        <span class="n">circuit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">qargs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">all_qbits</span><span class="p">)</span>
+        <span class="n">circuit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">qargs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">all_qbits</span><span class="p">)</span>
+
+        <span class="n">evidence_string</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">q_state</span><span class="p">)</span> <span class="k">for</span> <span class="n">q_state</span> <span class="ow">in</span> <span class="n">evidence_qbs</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+
+        <span class="n">circuit</span> <span class="o">=</span> <span class="n">circuit</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span>
+
+        <span class="n">S</span> <span class="o">=</span> <span class="n">Operator</span><span class="p">(</span><span class="n">circuit</span><span class="p">)</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">to_instruction</span><span class="p">()</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;S&#39;</span><span class="o">+</span><span class="n">evidence_string</span>
+
+        <span class="n">SUB</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="s2">&quot;0123456789&quot;</span><span class="p">,</span> <span class="s2">&quot;₀₁₂₃₄₅₆₇₈₉&quot;</span><span class="p">)</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">label</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">SUB</span><span class="p">)</span>
+
+        <span class="n">S</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
+
+        <span class="k">return</span> <span class="n">S</span></div>
+
+
+<div class="viewcode-block" id="qInference.getG">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRejection.qInference.getG">[docs]</a>
+    <span class="k">def</span> <span class="nf">getG</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">A</span><span class="p">:</span> <span class="n">Operator</span><span class="p">,</span> <span class="n">evidence_qbs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Operator</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gives the Grover iterate</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        A: Operator</span>
+<span class="sd">            Gate A</span>
+<span class="sd">        evidence_qbs: dict[int, int]</span>
+<span class="sd">            Dictionary with qubit IDs as keys and their quantum state as values</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Operator</span>
+<span class="sd">            Quantum gate G</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">circuit</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_registers</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+
+        <span class="n">Se</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getS</span><span class="p">(</span><span class="n">evidence_qbs</span><span class="p">)</span>
+        <span class="n">S0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getS</span><span class="p">({</span><span class="n">qb_id</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">qb_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_qbits</span><span class="p">})</span>
+
+        <span class="n">A_adj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAdjoint</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+
+        <span class="n">circuit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Se</span><span class="p">,</span> <span class="n">qargs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">all_qbits</span><span class="p">)</span>
+        <span class="n">circuit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">A_adj</span><span class="p">,</span> <span class="n">qargs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">all_qbits</span><span class="p">)</span>
+        <span class="n">circuit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">S0</span><span class="p">,</span> <span class="n">qargs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">all_qbits</span><span class="p">)</span>
+        <span class="n">circuit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">qargs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">all_qbits</span><span class="p">)</span>
+
+        <span class="n">circuit</span> <span class="o">=</span> <span class="n">circuit</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span>
+
+        <span class="n">G</span> <span class="o">=</span> <span class="n">Operator</span><span class="p">(</span><span class="n">circuit</span><span class="p">)</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">to_instruction</span><span class="p">()</span>
+        <span class="n">G</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;G&#39;</span>
+
+        <span class="k">return</span> <span class="n">G</span></div>
+
+
+<div class="viewcode-block" id="qInference.getEvidenceQuBits">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRejection.qInference.getEvidenceQuBits">[docs]</a>
+    <span class="k">def</span> <span class="nf">getEvidenceQuBits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evidence</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">:</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gives qubit representation of evidence in Baysian Network</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        evidence: dict[Union[str, int]: int]</span>
+<span class="sd">            Dictionary with variable IDs as keys and their state as values</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict[int, int]</span>
+<span class="sd">            Dictionary with qubit IDs as keys and their quantum state as values</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">n_id</span><span class="p">,</span> <span class="n">n_state</span> <span class="ow">in</span> <span class="n">evidence</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">bin_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">binary_repr</span><span class="p">(</span><span class="n">n_state</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">getWidth</span><span class="p">(</span><span class="n">n_id</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">qb_num</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_state</span><span class="p">)):</span>
+                <span class="n">res</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">n_qb_map</span><span class="p">[</span><span class="n">n_id</span><span class="p">][</span><span class="n">qb_num</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bin_state</span><span class="p">[</span><span class="n">qb_num</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="qInference.getSample">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRejection.qInference.getSample">[docs]</a>
+    <span class="k">def</span> <span class="nf">getSample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">A</span><span class="p">:</span> <span class="n">Operator</span><span class="p">,</span> <span class="n">G</span><span class="p">:</span> <span class="n">Operator</span><span class="p">,</span>
+                        <span class="n">evidence</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="nb">int</span><span class="p">],</span>
+                        <span class="n">verbose</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">:</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate one sample from evidence (Algorithm 1)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        A: Operator</span>
+<span class="sd">            Gate A</span>
+<span class="sd">        G: Operator</span>
+<span class="sd">            Gate G</span>
+<span class="sd">        evidence: dict[Union[str, int]: int]</span>
+<span class="sd">            Dictionary with variable IDs as keys and their state as values</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict[int, int]</span>
+<span class="sd">            Dictionary with variable IDs as keys and their state as values</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">cl_reg</span> <span class="o">=</span> <span class="n">ClassicalRegister</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_qbits</span><span class="p">),</span> <span class="s2">&quot;meas&quot;</span><span class="p">)</span>
+        <span class="n">circuit</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_registers</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="n">cl_reg</span><span class="p">)</span>
+        <span class="n">circuit</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">circuit</span><span class="o">.</span><span class="n">measure_all</span><span class="p">(</span><span class="n">add_bits</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">k</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span>
+
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+
+            <span class="n">k</span> <span class="o">=</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">[</span><span class="s1">&#39;G&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">2</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="mf">2.0</span><span class="o">**</span><span class="n">k</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">A</span><span class="o">.</span><span class="n">num_qubits</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="n">circuit</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+
+            <span class="n">circuit</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="mf">2.0</span><span class="o">**</span><span class="n">k</span><span class="p">))),</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="n">circuit</span><span class="o">.</span><span class="n">measure_all</span><span class="p">(</span><span class="n">add_bits</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="n">run_res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">aerSimulation</span><span class="p">(</span><span class="n">circuit</span><span class="p">,</span> <span class="n">shots</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">run_res</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">nodeId</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">node</span><span class="p">)):</span> <span class="n">state</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+                       <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">run_res</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+            <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;run_res = </span><span class="si">{</span><span class="n">run_res</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="n">match_evidence</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">evidence</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">n_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">nodeId</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;node = </span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">, </span><span class="se">\</span>
+<span class="s2">                            state = </span><span class="si">{</span><span class="n">state</span><span class="si">}</span><span class="s2">, </span><span class="se">\</span>
+<span class="s2">                            run_res[node] = </span><span class="si">{</span><span class="n">run_res</span><span class="p">[</span><span class="n">n_id</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">run_res</span><span class="p">[</span><span class="n">n_id</span><span class="p">]</span> <span class="o">!=</span> <span class="n">state</span><span class="p">:</span>
+                    <span class="n">match_evidence</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">match_evidence</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="k">return</span> <span class="n">run_res</span></div>
+
+
+<div class="viewcode-block" id="qInference.makeInference">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRejection.qInference.makeInference">[docs]</a>
+    <span class="k">def</span> <span class="nf">makeInference</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs rejection sampling on Quantum Circuit representation of</span>
+<span class="sd">        Baysian Network</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict[Union[str, int]: list[float]]</span>
+<span class="sd">            Dictionary with variable names as keys and proability vector as values</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">G</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">getGates</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;A&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;G&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="n">domainSize</span><span class="p">()</span>
+               <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">n_qb_map</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">):</span>
+            <span class="n">sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">evidence</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">res</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="n">state</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">1.0</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="p">():</span> <span class="n">val</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">inference_res</span> <span class="o">=</span> <span class="n">res</span>
+
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="qInference.getGates">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRejection.qInference.getGates">[docs]</a>
+    <span class="k">def</span> <span class="nf">getGates</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">evidence_n_id</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">nodeId</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">key</span><span class="p">)):</span> <span class="n">val</span>
+                         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">evidence</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">evidence_qbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getEvidenceQuBits</span><span class="p">(</span><span class="n">evidence_n_id</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getA</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">G</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getG</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="p">,</span> <span class="n">evidence_qbs</span><span class="o">=</span><span class="n">evidence_qbs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="qInference.setEvidence">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRejection.qInference.setEvidence">[docs]</a>
+    <span class="k">def</span> <span class="nf">setEvidence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evidence</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the evidence of the rejection sampler</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        evidence: dict[Union[str, int]: int]</span>
+<span class="sd">            Dictionary with variable IDs as keys and their state as values</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">evidence</span> <span class="o">=</span> <span class="n">evidence</span></div>
+
+
+<div class="viewcode-block" id="qInference.setMaxIter">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRejection.qInference.setMaxIter">[docs]</a>
+    <span class="k">def</span> <span class="nf">setMaxIter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_iter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the max iteration of the rejection sampler</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        max_iter: int = 1000</span>
+<span class="sd">            Max iteration</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span></div>
+
+
+<div class="viewcode-block" id="qInference.posterior">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRejection.qInference.posterior">[docs]</a>
+    <span class="k">def</span> <span class="nf">posterior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Potential</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Give the probability table of the node variable from sampling results</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node: Union[str, int]</span>
+<span class="sd">            Variable name or ID</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Potential</span>
+<span class="sd">            pyAgrum.Potential object</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="p">()</span>
+        <span class="n">potential</span> <span class="o">=</span> <span class="n">Potential</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_res</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">makeInference</span><span class="p">()</span>
+        <span class="n">potential</span><span class="o">.</span><span class="n">fillWith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inference_res</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">potential</span></div>
+
+
+<div class="viewcode-block" id="qInference.useFragmentBN">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNRejection.qInference.useFragmentBN">[docs]</a>
+    <span class="k">def</span> <span class="nf">useFragmentBN</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evidence</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">evidence</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">target</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">evidence</span> <span class="o">=</span> <span class="n">evidence</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">evidence</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+        <span class="n">fbn</span> <span class="o">=</span> <span class="n">BayesNetFragment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">bn</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">evidence</span><span class="p">):</span>
+            <span class="n">fbn</span><span class="o">.</span><span class="n">installAscendants</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">qbn</span> <span class="o">=</span> <span class="n">qBayesNet</span><span class="p">(</span><span class="n">fbn</span><span class="o">.</span><span class="n">toBN</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_registers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">getQuantumRegisters</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_qbits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qbn</span><span class="o">.</span><span class="n">n_qb_map</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span></div>
+</div>
+
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Tibor Dubois, Thierry Rioual, Mehmet Gunes.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

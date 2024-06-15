@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>qBN.qBNRT &mdash; QBN 1.0.0 documentation</title>
+  <title>XPs.qBNRT &mdash; QBN 1.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -43,7 +43,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../qBN.html">qBN package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">qBN</a></li>
 </ul>
 
         </div>
@@ -61,7 +61,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">qBN.qBNRT</li>
+      <li class="breadcrumb-item active">XPs.qBNRT</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -70,9 +70,10 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for qBN.qBNRT</h1><div class="highlight"><pre>
+  <h1>Source code for XPs.qBNRT</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">qBN.qBNMC</span> <span class="kn">import</span> <span class="n">qBayesNet</span>
 <span class="kn">from</span> <span class="nn">qBN.qBNRejection</span> <span class="kn">import</span> <span class="n">qInference</span>
+
 
 <span class="kn">from</span> <span class="nn">qiskit</span> <span class="kn">import</span> <span class="n">ClassicalRegister</span><span class="p">,</span> <span class="n">QuantumCircuit</span><span class="p">,</span> <span class="n">transpile</span>
 <span class="kn">from</span> <span class="nn">qiskit.converters</span> <span class="kn">import</span> <span class="n">circuit_to_dag</span>
@@ -89,7 +90,7 @@
 
 
 <div class="viewcode-block" id="qRuntime">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNRT.qRuntime">[docs]</a>
+<a class="viewcode-back" href="../../qBN.html#XPs.qBNRT.qRuntime">[docs]</a>
 <span class="k">class</span> <span class="nc">qRuntime</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class used to evaluate the thoeretical time of execution of a quantum sampler on a quantum device</span>
@@ -120,7 +121,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">G_time</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="qRuntime.getGateExecutionTime">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNRT.qRuntime.getGateExecutionTime">[docs]</a>
+<a class="viewcode-back" href="../../qBN.html#XPs.qBNRT.qRuntime.getGateExecutionTime">[docs]</a>
     <span class="k">def</span> <span class="nf">getGateExecutionTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Stores the execution time of gate A and G</span>
@@ -131,7 +132,7 @@
 
 
 <div class="viewcode-block" id="qRuntime.getAtime">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNRT.qRuntime.getAtime">[docs]</a>
+<a class="viewcode-back" href="../../qBN.html#XPs.qBNRT.qRuntime.getAtime">[docs]</a>
     <span class="k">def</span> <span class="nf">getAtime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="n">IBMBackend</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Estimates the theoredical runtime of the quantum circuit from given backend in seconds</span>
@@ -174,7 +175,7 @@
 
 
 <div class="viewcode-block" id="qRuntime.getGtime">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNRT.qRuntime.getGtime">[docs]</a>
+<a class="viewcode-back" href="../../qBN.html#XPs.qBNRT.qRuntime.getGtime">[docs]</a>
     <span class="k">def</span> <span class="nf">getGtime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="n">IBMBackend</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Estimates the theoredical runtime of a Grover iterate from given backend in seconds</span>
@@ -223,7 +224,7 @@
 
 
 <div class="viewcode-block" id="qRuntime.rejectionSamplingRuntime">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNRT.qRuntime.rejectionSamplingRuntime">[docs]</a>
+<a class="viewcode-back" href="../../qBN.html#XPs.qBNRT.qRuntime.rejectionSamplingRuntime">[docs]</a>
     <span class="k">def</span> <span class="nf">rejectionSamplingRuntime</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Uses gate execution time from before to compute the total time of the rejection sampling process </span>
@@ -243,7 +244,7 @@
 
 
 <div class="viewcode-block" id="qRuntime.compareInference">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNRT.qRuntime.compareInference">[docs]</a>
+<a class="viewcode-back" href="../../qBN.html#XPs.qBNRT.qRuntime.compareInference">[docs]</a>
     <span class="k">def</span> <span class="nf">compareInference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ie</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compares 2 inference by plotting all the points from qInference and ie</span>

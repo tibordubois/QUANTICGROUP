@@ -1,49 +1,49 @@
-\section{Amplification d'amplitude}
+\section{Amplitude Amplification}
 \label{part2}
 
-L'amplification d'amplitude est une généralisation de l'algorithme de Grover qui permet à la recherche de plusieurs solutions, elle pose les bases pour de nombreux algorithmes quantiques, et permet en outre une optimisation quadratique de la complexité de nombreux algorithmes classiques. \cite{brassard2002quantum}
+Amplitude amplification is a generalization of Grover's algorithm that allows searching for multiple solutions, laying the foundation for many quantum algorithms, and furthermore, providing a quadratic optimization of the complexity of many classical algorithms. \cite{brassard2002quantum}
 
 \subsection{Description}
-En reprenant l'espace d'états $\mathcal{H}$ muni de sa base orthonormale $(|x \rangle )_{x \in [\![ 0, N-1 ]\!]}$ introduite dans la partie \ref{part1}, la fonction $f$ est à présent  l'indicatrice d'un sous ensemble $\{ \omega_k \}_{k \in [\![ 0, M ]\!]} \subseteq [\![ 0, N-1 ]\!]$ de cardinal $M$.
-On définit par la suite l'opérateur de projection $P=\sum_{k = 0}^m |\omega_k \rangle \langle \omega_k |$ qui partitionne $\mathcal{H}$ en deux sous espaces vectoriels orthogonaux:
+Revisiting the state space $\mathcal{H}$ endowed with its orthonormal basis $(|x \rangle )_{x \in [\![ 0, N-1 ]\!]}$ introduced in section \ref{part1}, the function $f$ is now the indicator of a subset $\{ \omega_k \}_{k \in [\![ 0, M ]\!]} \subseteq [\![ 0, N-1 ]\!]$ of cardinality $M$.
+We then define the projection operator $P=\sum_{k = 0}^m |\omega_k \rangle \langle \omega_k |$ which partitions $\mathcal{H}$ into two orthogonal subspaces:
 \begin{align*}
 	\mathcal{H}_0 &= \mathrm{Ker}P = \mathrm{Vect}(\{ |x\rangle \in \mathcal{H} \ | \ f(x) = 0\}) \\
     \mathcal{H}_1 &= \ \mathrm{Im}P = \mathrm{Vect}(\{ |x\rangle \in \mathcal{H} \ | \ f(x) = 1\})    
 \end{align*}
-Le principe de l'algorithme est donc de réaliser une série de rotations sur un état initial $| \psi \rangle \in \mathcal{H}$ afin de le situer dans $\mathcal{H}_1$, l'espace vectoriel des solutions.
+The principle of the algorithm is therefore to perform a series of rotations on an initial state $| \psi \rangle \in \mathcal{H}$ to place it in $\mathcal{H}_1$, the vector space of solutions.
 \\
-Étant donné un état unitaire $| \psi \rangle \in \mathcal{H} = \mathcal{H}_0 \oplus \mathcal{H}_1$, nous avons la décomposition:
+Given a unitary state $| \psi \rangle \in \mathcal{H} = \mathcal{H}_0 \oplus \mathcal{H}_1$, we have the decomposition:
 \begin{align*}
     |\psi \rangle = \mathrm{cos}(\theta)| \psi_0 \rangle + \mathrm{sin}(\theta)| \psi_1 \rangle
 \end{align*}
-Avec $\theta = \mathrm{arcsin}(||P |\psi \rangle||_2) \in [0, \pi / 2]$ et 
+With $\theta = \mathrm{arcsin}(||P |\psi \rangle||_2) \in [0, \pi / 2]$ and 
 \begin{align*}
 |\psi_0 \rangle =&\ \frac{(Id-P) |\psi \rangle}{||(Id-P) |\psi \rangle||_2} \in \mathcal{H}_0 \\ 
 |\psi_1 \rangle =&\ \quad \ \, \frac{P |\psi \rangle}{||P |\psi \rangle||_2} \quad \ \ \in \mathcal{H}_1
 \end{align*}
-les projections normalisées de $|\psi \rangle$.
+the normalized projections of $|\psi \rangle$.
 \\
-Cette décomposition donne lieu au sous espace vectoriel $\mathcal{H}_{\psi} = \mathrm{Vect}(|\psi_0 \rangle, \psi_1 \rangle)$. 
+This decomposition gives rise to the subspace $\mathcal{H}_{\psi} = \mathrm{Vect}(|\psi_0 \rangle, \psi_1 \rangle)$. 
 \\
-On peut remarquer que la probabilité d'obtenir le vecteur initial $|\psi \rangle = \sum_{k=0}^{N-1} |k\rangle$ dans $\mathcal{H}_1$ sans avoir exécuté l'algorithme est de $\mathrm{sin}^2(\theta) = ||P |\psi \rangle||_2^2 = M/N$, ce qui correspond bien à la probabilité uniforme d'obtenir une solution en choisisant un élément au hasard dans $[\![ 0, N-1 ]\!]$. Après exécution, cette probabilité se rapproche de 1. 
+We can note that the probability of obtaining the initial vector $|\psi \rangle = \sum_{k=0}^{N-1} |k\rangle$ in $\mathcal{H}_1$ without having executed the algorithm is $\mathrm{sin}^2(\theta) = ||P |\psi \rangle||_2^2 = M/N$, which corresponds to the uniform probability of obtaining a solution by choosing an element at random in $[\![ 0, N-1 ]\!]$. After execution, this probability approaches 1.
 
-\subsection{Algorithme}
+\subsection{Algorithm}
 
-Nous retrouvons le même algorithme de la section précédente, avec cette fois-ci les opérateurs:
+We find the same algorithm as in the previous section, this time with the operators:
 
 \begin{align*}
 	U_{P} = & \ Id - 2P \\
     U_{\psi} = & \ 2 | \psi \rangle \langle \psi | - Id
 \end{align*}
 
-\noindent En posant $Q = U_{\psi} U_{P} $ on a:
+\noindent Setting $Q = U_{\psi} U_{P} $, we have:
 \begin{align*}
 	Q | \psi_0 \rangle =& \quad \ \, U_{\psi} | \psi_0 \rangle = \ (2 \mathrm{cos}^2(\theta)-1) | \psi_0 \rangle + \ 2 \mathrm{sin}(\theta)\mathrm{cos}(\theta) | \psi_1 \rangle \\
     Q | \psi_1 \rangle =&\ -U_{\psi} | \psi_1 \rangle = -2 \mathrm{sin}(\theta)\mathrm{cos}(\theta) | \psi_0 \rangle + (1 + 2 \mathrm{sin}^2(\theta)) | \psi_1 \rangle
 \end{align*}
-sachant que $\langle \psi | \psi_0 \rangle = \mathrm{cos}(\theta)$ et $\langle \psi | \psi_1 \rangle = \mathrm{sin}(\theta)$.
+knowing that $\langle \psi | \psi_0 \rangle = \mathrm{cos}(\theta)$ and $\langle \psi | \psi_1 \rangle = \mathrm{sin}(\theta)$.
 \\
-Ainsi dans $\mathcal{H}_{\psi}$, l'opérateur $Q$ correspond à une rotation d'angle $2\theta$:
+Thus in $\mathcal{H}_{\psi}$, the operator $Q$ corresponds to a rotation by angle $2\theta$:
 \[
 Q =
 \begin{pmatrix}
@@ -51,8 +51,8 @@ Q =
 \mathrm{sin}(2\theta) & \mathrm{cos}(2\theta)
 \end{pmatrix}
 \]
-En appliquant l'opérateur $Q$ sur l'état $| \psi \rangle$ un nombre $r$ de fois, nous obtenons:
+Applying the operator $Q$ on the state $| \psi \rangle$ a number $r$ of times, we obtain:
 \[ Q^r | \psi \rangle = \mathrm{cos}((2r+1)\theta)| \psi_0 \rangle + \mathrm{sin}((2r+1)\theta)| \psi_1 \rangle\]
-La probabilité d'obtenir l'état voulu lors de la mesure après $r$ itérations est ainsi $\mathrm{sin}^2 \left( \left( 2r + 1 \right) \theta \right)$ qui est maximisée pour $r \approx \frac{\pi}{4\theta}$. 
+The probability of obtaining the desired state upon measurement after $r$ iterations is thus $\mathrm{sin}^2 \left( \left( 2r + 1 \right) \theta \right)$ which is maximized for $r \approx \frac{\pi}{4\theta}$. 
 \\
-Pour $\mathrm{sin}(\theta) \ll 1$, nous pouvons en outre approximer la valeur de $r$ par: \[\frac{\pi}{4\mathrm{sin}(\theta)} = \frac{\pi}{4} \sqrt{\frac{N}{M}} = \mathcal{O}(\sqrt{N})\]
+For $\mathrm{sin}(\theta) \ll 1$, we can further approximate the value of $r$ by: \[\frac{\pi}{4\mathrm{sin}(\theta)} = \frac{\pi}{4} \sqrt{\frac{N}{M}} = \mathcal{O}(\sqrt{N})\]

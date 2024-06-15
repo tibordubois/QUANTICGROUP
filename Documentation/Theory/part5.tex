@@ -1,63 +1,67 @@
-\section{Échantillonage quantique par la méthode de rejet}
+\section{Quantum Sampling by Rejection Method}
 
-En représentant un réseau bayésien par un circuit quantique, nous pouvons utiliser l'amplification d'amplitude afin de faire de l'inférence à l'aide de la méthode de rejet. \cite{low2014quantum}
+Based on the construction in section \ref{part4}, we can use amplitude amplification to perform inference using the rejection method. For a Bayesian network with $k$ variables each having fewer than $m$ parents, generating classical samples of the joint distribution is done in $\mathcal{O}(km)$. Thus, for $P_e$ the probability of observation, the rejection method has an expected complexity of $\mathcal{O}(km/P_e)$. The computational performance of the classical algorithm degrades as soon as $P_e$ becomes exponentially small when the number of observation variables increases. In fact, rejection sampling can be seen as an unstructured search for samples in the distribution, and amplitude amplification allows for a square root improvement of this search. \cite{low2014quantum}
 
 \subsection{Description}
 
-Afin de simplifier les notations, supposons que le réseau bayésien est composé de $n$ états binaires, avec $\mathcal{E}$ l'ensemble des états d'observation et $\mathcal{Q}$ les états cibles.
-Soient $(e_i)_{i \in [\![1,|\mathcal{E}|]\!]}$ les qubits représentant les éléments de $\mathcal{E}$ et $e = e_{|\mathcal{E}|}...e_2e_1$ la chaîne de bits correspondante. De la même manière définissons $q$ la chaîne représentant $\mathcal{Q}$.
-Le but de l'algorithme est ainsi d'échantillonner à partir de la distribution $\mathbb{P}(\mathcal{Q}|\mathcal{E}=e)$.
+To simplify the notations, let us assume that the Bayesian network consists of $k$ binary states, with $\mathcal{E}$ the set of observation states and $\mathcal{Q}$ the target states.
+Let $(e_i)_{i \in [\![1,|\mathcal{E}|]\!]}$ be the qubits representing the elements of $\mathcal{E}$ and $e = e_1e_2\cdots e_{|\mathcal{E}|}$ the corresponding bit string. Similarly, let $q$ be the string representing $\mathcal{Q}$.
+The goal of the algorithm is thus to sample from the distribution $\mathbb{P}(\mathcal{Q}|\mathcal{E}=e)$.
 \\
-Soit $A$ l'opérateur unitaire qui prépare le vecteur d'état représentatif du réseau bayésien $| \psi \rangle = A |0\rangle ^{\otimes n}$, appelé \textit{q-échantillon}. En permutant les états de $\mathcal{E}$ à droite, on a une décomposition du q-échantillons avec des états contenant des observations correctes et incorrectes:
+Let $A$ be the unitary operator that prepares the q-sample $| \psi \rangle = A |0\rangle ^{\otimes k}$. By permuting the states of $\mathcal{E}$ to the right, we have a decomposition of the q-sample with states containing correct and incorrect observations:
 \begin{align*}
 	|\psi \rangle =&\ \sqrt{1-P_e}\ |\psi_0\rangle \quad + \sqrt{P_e}\ |\psi_1\rangle \\
 	=&\ \sqrt{1-P_e}\ |q\rangle |e_0\rangle + \sqrt{P_e}\ |q\rangle |e_1\rangle
 \end{align*}
-Avec $P_e = \mathbb{P}(\mathcal{E}=e)$, $|\psi_0 \rangle \in = \mathcal{Q} \otimes \mathcal{E}_0$ et $|\psi_1 \rangle \in = \mathcal{Q} \otimes \mathcal{E}_1$.
+With $P_e = \mathbb{P}(\mathcal{E}=e)$, $|\psi_0 \rangle \in \mathcal{Q} \otimes \mathcal{E}_0$ and $|\psi_1 \rangle \in \mathcal{Q} \otimes \mathcal{E}_1$.
 \\
-Ici, on peut voir la fonction $f$ comme:
+Here, we can see the function $f$ as:
 \begin{align*}
     f : \{0,1\}^{|\mathcal{Q}|}\times\{0,1\}^{|\mathcal{E}|} &\longrightarrow \{0,1\} \\
-    (q_{|\mathcal{Q}|},...,q_1, e_{|\mathcal{E}|},...,e_1) &\longmapsto
+    (q_1,\hdots,q_{|\mathcal{Q}|}, e_1,\hdots,e_{|\mathcal{E}|}) &\longmapsto
  \begin{cases}
- 1 \ \mathrm{si} \ e_{|\mathcal{E}|},...,e_1 = e \\
- 0 \ \mathrm{sinon} \
+ 1 \ \mathrm{if} \ e_1 \cdots \, e_{|\mathcal{E}|} = e \\
+ 0 \ \mathrm{otherwise}
  \end{cases}
 \end{align*}
-Comme dans les sections précédentes, $f$ partitionne $\mathcal{H} = \mathcal{Q} \otimes \mathcal{E}$ en deux espaces vectoriels orthogonaux:
+As in the previous sections, $f$ partitions $\mathcal{H} = \mathcal{Q} \otimes \mathcal{E}$ into two orthogonal vector spaces:
 \[\mathcal{H} = \mathcal{Q} \otimes (\mathcal{E}_0 \oplus \mathcal{E}_1) = (\mathcal{Q} \otimes \mathcal{E}_0) \oplus (\mathcal{Q} \otimes \mathcal{E}_1)\]
-Où $\mathcal{Q} \otimes \mathcal{E}_0$ contient les q-échantillons de la distribution $\mathbb{P}(\mathcal{Q,E}|\mathcal{E}\neq e)$, et $\mathcal{Q} \otimes \mathcal{E}_1$ de $\mathbb{P}(\mathcal{Q,E}|\mathcal{E} = e)$.
-En effectuant une amplification d'amplitude sur le système, nous obtenons un q-échantillon de la distribution $\mathbb{P}(\mathcal{Q}|\mathcal{E} = e)$ avec haute probabilité en $O(1/\sqrt{P_e})$.
+Where $\mathcal{Q} \otimes \mathcal{E}_0$ contains the q-samples of the distribution $\mathbb{P}(\mathcal{Q,E}|\mathcal{E}\neq e)$, and $\mathcal{Q} \otimes \mathcal{E}_1$ of $\mathbb{P}(\mathcal{Q,E}|\mathcal{E} = e)$.
+By performing amplitude amplification on the system, we obtain a q-sample of the distribution $\mathbb{P}(\mathcal{Q}|\mathcal{E} = e)$ with high probability.
 
-\subsection{Algorithme}
+\subsection{Algorithm}
 
-Soit $i$ l'itérateur de la boucle externe:
+Let $i$ be the iterator of the outer loop:
 \begin{itemize}
-    \item[1] Initialiser $|\psi \rangle = A|0\rangle^{\otimes n}$.
-    \item[2] Appliquer l'itération de Grover $2^i$ fois:
-    \item[] Pour $j \in [\![0, 2^i-1]\!]$,
+    \item[1] Initialize $|\psi \rangle = A|0\rangle^{\otimes k}$.
+    \item[2] Apply Grover's iteration $2^i$ times:
+    \item[] For $j \in [\![0, 2^i-1]\!]$,
     \begin{itemize}
   	 
-   	 \item[2.1] Appliquer à $|\psi_{(j)}\rangle$ l'opérateur $U_{e}$, donné aussi par:
+   	 \item[2.1] Apply to $|\psi_{(j)}\rangle$ the operator $U_{e}$, also given by:
    	 \begin{align*}
    	 U_{e} = Id_{\mathcal{Q}} \otimes (Id_{\mathcal{E}} -  2|e \rangle \langle e| )
    	 \end{align*}
-   	 \item[2.2] Appliquer à $|\psi_{(j)}\rangle$ l'opérateur $U_{\psi}$ :
+   	 \item[2.2] Apply to $|\psi_{(j)}\rangle$ the operator $U_{\psi}$:
     	\begin{align*}
    	 U_{\psi} = 2|\psi\rangle \langle \psi | - Id_{\mathcal{H}}
    	 \end{align*}
-    	Celui-ci est aussi donnée par:
+    	This is also given by:
     	\begin{align*}
     	U_{\psi} = AU_{0}A^{-1}
    	 \end{align*}
-    	ou $U_{0} = 2|0\rangle \langle 0|^{\otimes n} - Id_{\mathcal{H}}$.
+    	where $U_{0} = 2|0\rangle \langle 0|^{\otimes k} - Id_{\mathcal{H}}$.
    	 
     \end{itemize}
-    \item[] On se retrouve donc avec $|\psi_{(i+1)}\rangle = AU_{0}A^{-1}U_{\omega} |\psi_{(i)} \rangle$.
-    \item[3] Mesurer les qubits d'observation $\mathcal{E}$ de l'état résultant $|\psi_{(2^i)} \rangle$.
+    \item[] Thus, we end up with $|\psi_{(i+1)}\rangle = AU_{0}A^{-1}U_{\omega} |\psi_{(i)} \rangle$.
+    \item[3] Measure the observation qubits $\mathcal{E}$ of the resulting state $|\psi_{(2^i)} \rangle$: Let $t$ be the result.
 	\item[4]
 	\begin{itemize}
-   	 \item[4.1] Si $\mathcal{E}=e$: Fin de l'algorithme.
-   	 \item[4.2] Sinon: Retourner à l'étape 1 en incrémentant $i$ de $1$.
+   	 \item[4.1] If $t=e$: End of the algorithm.
+   	 \item[4.2] Otherwise: Return to step 1 and increment $i$ by $1$.
     \end{itemize}
 \end{itemize}
+
+\subsection{Complexity}
+
+Based on the preparation time of a q-sample detailed in the previous section, we obtain a total expected complexity of $\mathcal{O}(k2^m/\sqrt{P_e})$ to generate a sample from the distribution $\mathbb{P}(\mathcal{Q}|\mathcal{E}=e)$.

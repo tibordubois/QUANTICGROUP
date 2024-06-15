@@ -1,10 +1,6 @@
-<<<<<<<< HEAD:qBN/qBNRT.py
 from qBN.qBNMC import qBayesNet
 from qBN.qBNRejection import qInference
-========
-from .qBNMC import qBayesNet
-from .qBNRejection import qInference
->>>>>>>> 6ed34afebb03ec630fe5284c7eab9397aaaddbc0:XPs/qBNRT.py
+
 
 from qiskit import ClassicalRegister, QuantumCircuit, transpile
 from qiskit.converters import circuit_to_dag

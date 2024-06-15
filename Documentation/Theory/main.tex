@@ -1,6 +1,6 @@
 \documentclass{article}
 \usepackage{graphicx} % Required for inserting images
-\usepackage{amsfonts, amsmath, bbm, adforn, subcaption}
+\usepackage{amsfonts, amsmath, bbm, mathrsfs, subcaption, adjustbox}
 \usepackage[backend=biber]{biblatex}
 
 \addbibresource{references.bib}
@@ -10,11 +10,13 @@
 
 \begin{document}
 
+\begin{adjustbox}{minipage=1.2\textwidth, center}
 \begin{center}
-\textsc{\Large Inférence Quantique dans les Réseau Bayésien}
+\textsc{\Large Quantum Inference in Bayesian Networks}
 \\[5pt]
-\textsc{\large Rapport}  
+\textsc{\large Report}  
 \end{center}
+\end{adjustbox}
 
 \input{part1.tex}
 \input{part2.tex}

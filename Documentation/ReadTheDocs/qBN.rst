@@ -23,7 +23,7 @@ Each function in this class corresponds to specific equations and figures in the
 qBNRT module
 ------------
 
-.. automodule:: qBN.qBNRT
+.. automodule:: XPs.qBNRT
    :members:
    :undoc-members:
    :show-inheritance:

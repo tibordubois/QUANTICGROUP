@@ -86,7 +86,7 @@ The `qBN` package provides a powerful tool for leveraging quantum computing in p
 
 ## Authors
 
-- [Tibor Dubois, Thierry Rioual, Mehmet Gunes]
+- [Dubois Tibor, Rioual Thierry, Gunes Mehmet]
 
 ## References
 

@@ -21,7 +21,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="qBN" href="modules.html" /> 
+    <link rel="prev" title="Welcome to QBN’s documentation!" href="index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,13 +45,10 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="modules.html">qBN</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">qBN package</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#qbnmc-module">qBNMC module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#qbnrt-module">qBNRT module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#qbnrejection-module">qBNRejection module</a></li>
-</ul>
-</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">qBN package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#qbnmc-module">qBNMC module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#qbnrt-module">qBNRT module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#qbnrejection-module">qBNRejection module</a></li>
 </ul>
 </li>
 </ul>
@@ -70,7 +67,6 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="modules.html">qBN</a></li>
       <li class="breadcrumb-item active">qBN package</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/qBN.rst.txt" rel="nofollow"> View page source</a>
@@ -643,7 +639,7 @@ Operator of the Quantum Circuit representing the Baysian Network</p>
 
 <dl class="py method">
 <dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">getEvidenceQuBits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">evidence:</span> <span class="pre">dict[slice(&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">None)]</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.getEvidenceQuBits"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<span class="sig-name descname"><span class="pre">getEvidenceQuBits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.getEvidenceQuBits"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Gives qubit representation of evidence in Baysian Network</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -702,7 +698,7 @@ Operator of the Quantum Circuit representing the Baysian Network</p>
 
 <dl class="py method">
 <dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">getSample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">A:</span> <span class="pre">~qiskit.quantum_info.operators.operator.Operator,</span> <span class="pre">G:</span> <span class="pre">~qiskit.quantum_info.operators.operator.Operator,</span> <span class="pre">evidence:</span> <span class="pre">dict[slice(typing.Union[str,</span> <span class="pre">int],</span> <span class="pre">&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">None)],</span> <span class="pre">verbose:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict[slice(&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">None)]</span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.getSample"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<span class="sig-name descname"><span class="pre">getSample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">A:</span> <span class="pre">~qiskit.quantum_info.operators.operator.Operator,</span> <span class="pre">G:</span> <span class="pre">~qiskit.quantum_info.operators.operator.Operator,</span> <span class="pre">evidence:</span> <span class="pre">dict[slice(typing.Union[str,</span> <span class="pre">int],</span> <span class="pre">&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">None)],</span> <span class="pre">verbose:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.getSample"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Generate one sample from evidence (Algorithm 1)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -740,7 +736,7 @@ Operator of the Quantum Circuit representing the Baysian Network</p>
 
 <dl class="py method">
 <dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">makeInference</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict[slice(typing.Union[str,</span> <span class="pre">int],</span> <span class="pre">list[float],</span> <span class="pre">None)]</span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.makeInference"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<span class="sig-name descname"><span class="pre">makeInference</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.makeInference"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Performs rejection sampling on Quantum Circuit representation of
 Baysian Network</p>
 <dl class="field-list simple">
@@ -777,7 +773,7 @@ Baysian Network</p>
 
 <dl class="py method">
 <dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">setEvidence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">evidence:</span> <span class="pre">dict[slice(typing.Union[str,</span> <span class="pre">int],</span> <span class="pre">&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">None)]</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.setEvidence"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<span class="sig-name descname"><span class="pre">setEvidence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.setEvidence"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Sets the evidence of the rejection sampler</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -800,7 +796,26 @@ Baysian Network</p>
 <dl class="py method">
 <dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">useFragmentBN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.useFragmentBN"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
-<dd></dd></dl>
+<dd><p>Updates the Bayesian network fragment based on the given evidence and target nodes.</p>
+<p>This method takes sets of evidence and target nodes, integrates them with the
+current evidence, and then updates the internal quantum Bayesian network (qBN)
+by installing all ascendants of the nodes in the combined set of evidence and
+target nodes. Essentially, it focuses on a specific fragment or piece of the
+larger Bayesian network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>evidence</strong> (<em>set</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em><em>int</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – A set of nodes considered as evidence. These nodes are usually observed or
+known variables. If not provided, an empty set is used by default.</p></li>
+<li><p><strong>target</strong> (<em>set</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em><em>int</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – A set of target nodes whose ancestors need to be installed in the Bayesian
+network fragment. If not provided, an empty set is used by default.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -811,7 +826,7 @@ Baysian Network</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="modules.html" class="btn btn-neutral float-left" title="qBN" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to QBN’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

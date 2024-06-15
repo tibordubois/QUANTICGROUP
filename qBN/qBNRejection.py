@@ -1,18 +1,11 @@
-from qBN.qBNMC import qBayesNet #relative import
-
+from qBN.qBNMC import qBayesNet  
 import numpy as np
-
-from typing import Union #List and Dict are deprecated (python 3.9)
-
+from typing import Union  # List and Dict are deprecated (python 3.9)
 from qiskit import ClassicalRegister, QuantumCircuit
 from qiskit.circuit.library import XGate, ZGate
 from qiskit.quantum_info import Operator
-
-import scipy.linalg #for qiskit transpile function
-
+import scipy.linalg  # for qiskit transpile function
 from pyAgrum import Potential, BayesNetFragment
-
-
 
 class qInference:
     """
@@ -99,7 +92,8 @@ class qInference:
         M_label = M.label
         M = Operator(M.adjoint())
         M = M.to_instruction()
-        if M_label is not None: M.label = M_label+'\u2020'
+        if M_label is not None:
+            M.label = M_label + '\u2020'
         return M
 
     def getB(self, evidence_qbs: dict[int, int]) -> Operator:
@@ -151,7 +145,7 @@ class qInference:
 
         rotation = ZGate()
         if len(evidence_qbs) > 1:
-            rotation = rotation.control(len(evidence_qbs) - 1)
+            rotation is rotation.control(len(evidence_qbs) - 1)
 
         circuit.append(rotation, list(evidence_qbs.keys()))
 
@@ -193,7 +187,7 @@ class qInference:
 
         S = Operator(circuit)
         S = S.to_instruction()
-        label = 'S'+evidence_string
+        label = 'S' + evidence_string
 
         SUB = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
         label = label.translate(SUB)
@@ -240,7 +234,7 @@ class qInference:
 
         return G
 
-    def getEvidenceQuBits(self, evidence: dict[int: int]) -> dict[int, int]:
+    def getEvidenceQuBits(self, evidence: dict[int, int]) -> dict[int, int]:
         """
         Gives qubit representation of evidence in Baysian Network
 
@@ -266,7 +260,7 @@ class qInference:
 
     def getSample(self, A: Operator, G: Operator,
                         evidence: dict[Union[str, int]: int],
-                        verbose: int = 0) -> dict[int: int]:
+                        verbose: int = 0) -> dict[int, int]:
         """
         Generate one sample from evidence (Algorithm 1)
 
@@ -299,13 +293,12 @@ class qInference:
             k = k + 1
 
             self.log['A'] += 1
-            self.log['G'] += 2*int(np.ceil(2.0**k)) - 1
+            self.log['G'] += 2 * int(np.ceil(2.0 ** k)) - 1
 
-            for i in range(1, A.num_qubits+1):
+            for i in range(1, A.num_qubits + 1):
                 p = circuit.data.pop(-1)
 
-
-            circuit.compose(G.power(int(np.ceil(2.0**k))), inplace=True)
+            circuit.compose(G.power(int(np.ceil(2.0 ** k))), inplace=True)
 
             circuit.measure_all(add_bits=False)
 
@@ -314,7 +307,8 @@ class qInference:
             run_res = {self.qbn.bn.nodeId(self.qbn.bn.variable(node)): state.index(1.0)
                        for node, state in run_res.items()}
 
-            if verbose > 0: print(f"run_res = {run_res}")
+            if verbose > 0:
+                print(f"run_res = {run_res}")
 
             match_evidence = True
 
@@ -333,7 +327,7 @@ class qInference:
 
         return run_res
 
-    def makeInference(self) -> dict[Union[str, int]: list[float]]:
+    def makeInference(self) -> dict[Union[str, int], list[float]]:
         """
         Performs rejection sampling on Quantum Circuit representation of
         Baysian Network
@@ -345,7 +339,8 @@ class qInference:
 
         """
 
-        if self.A is None or self.G is None: self.getGates()
+        if self.A is None or self.G is None:
+            self.getGates()
 
         self.log = {"A": 0, "G": 0}
 
@@ -356,7 +351,7 @@ class qInference:
             sample = self.getSample(self.A, self.G, self.evidence)
 
             for node, state in sample.items():
-                res[node][state] += 1.0/self.max_iter
+                res[node][state] += 1.0 / self.max_iter
 
         res = {self.qbn.bn.variable(key).name(): val for key, val in res.items()}
 
@@ -375,7 +370,7 @@ class qInference:
         self.A = self.getA()
         self.G = self.getG(self.A, evidence_qbs=evidence_qbs)
 
-    def setEvidence(self, evidence: dict[Union[str, int]: int]) -> None:
+    def setEvidence(self, evidence: dict[Union[str, int], int]) -> None:
         """
         Sets the evidence of the rejection sampler
 
@@ -417,16 +412,41 @@ class qInference:
         name = self.qbn.bn.variable(node).name()
         potential = Potential().add(self.qbn.bn.variable(name))
 
-        if self.inference_res is None: self.makeInference()
+        if self.inference_res is None:
+            self.makeInference()
         potential.fillWith(self.inference_res[name])
 
         return potential
 
     def useFragmentBN(self, evidence: set[Union[str, int]] = None, target: set[Union[str, int]] = None) -> None:
         """
+        Updates the Bayesian network fragment based on the given evidence and target nodes.
+
+        This method takes sets of evidence and target nodes, integrates them with the 
+        current evidence, and then updates the internal quantum Bayesian network (qBN) 
+        by installing all ascendants of the nodes in the combined set of evidence and 
+        target nodes. Essentially, it focuses on a specific fragment or piece of the 
+        larger Bayesian network.
+
+        Parameters
+        ----------
+        evidence : set[Union[str, int]], optional
+            A set of nodes considered as evidence. These nodes are usually observed or 
+            known variables. If not provided, an empty set is used by default.
+        
+        target : set[Union[str, int]], optional
+            A set of target nodes whose ancestors need to be installed in the Bayesian 
+            network fragment. If not provided, an empty set is used by default.
+
+        Returns
+        -------
+        None
+        
         """
-        if evidence is None: evidence = set()
-        if target is None: target = set()
+        if evidence is None:
+            evidence = set()
+        if target is None:
+            target = set()
         evidence = evidence.union(self.evidence.keys())
 
         fbn = BayesNetFragment(self.qbn.bn)
@@ -437,6 +457,4 @@ class qInference:
         self.qbn = qBayesNet(fbn.toBN())
         self.q_registers = self.qbn.getQuantumRegisters()
         self.all_qbits = np.hstack(list(self.qbn.n_qb_map.values())).tolist()
-
-
 

@@ -84,12 +84,13 @@
 <p>The <cite>qBayesNet</cite> class is designed to build a quantum circuit representation of a Bayesian Network. This implementation is based on the concepts presented in the paper <a class="reference external" href="https://arxiv.org/abs/2004.14803">Quantum Circuit Representation of Bayesian Networks</a> by Sima E. Borujeni. The class allows for the creation of a quantum circuit using Qiskit and facilitates performing inference on the network to compare the performance with classical Bayesian networks.</p>
 <p>Each function in this class corresponds to specific equations and figures in the paper, providing a direct mapping of theoretical concepts to practical implementation:</p>
 <ul class="simple">
-<li><p><cite>mapNodeToQBit</cite>: Maps variable IDs from Bayesian Network to qubit IDs for quantum circuit implementation (related to section 4.1 of the document).</p></li>
-<li><p><cite>getWidth</cite>: Determines the number of qubits needed to represent a variable (related to section 4.1).</p></li>
-<li><p><cite>getBinarizedParameters</cite>: Provides binary representations of variable states (related to section 4.5).</p></li>
-<li><p><cite>multiQubitRotation</cite>: Adds rotations to the quantum circuit to map probabilities to qubits (related to section 4.4).</p></li>
-<li><p><cite>buildCircuit</cite>: Constructs the full quantum circuit representation of the Bayesian Network (illustrated in section 4.1).</p></li>
+<li><p><cite>mapNodeToQBit</cite>: Maps variable IDs from Bayesian Network to qubit IDs for quantum circuit implementation (related to Section 3).</p></li>
+<li><p><cite>getWidth</cite>: Determines the number of qubits needed to represent a variable (related to Section 3.1).</p></li>
+<li><p><cite>getBinarizedParameters</cite>: Provides binary representations of variable states (related to Section 3.3).</p></li>
+<li><p><cite>multiQubitRotation</cite>: Adds rotations to the quantum circuit to map probabilities to qubits (related to Section 3.2 and Figure 5).</p></li>
+<li><p><cite>buildCircuit</cite>: Constructs the full quantum circuit representation of the Bayesian Network (illustrated in Section 3 and demonstrated with examples in Section 4).</p></li>
 </ul>
+<p>The paper details the principles of representing a Bayesian network using quantum circuits, where nodes with discrete states are mapped to qubits, and their marginal and conditional probabilities are encoded using quantum gates such as RY and controlled-RY gates. This method allows for leveraging the advantages of quantum computing, such as superposition and entanglement, to perform inference more efficiently than classical methods.</p>
 <dl class="py class">
 <dt class="sig sig-object py">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qBN.qBNMC.</span></span><span class="sig-name descname"><span class="pre">qBayesNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">BayesNet</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qBN/qBNMC.html#qBayesNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
@@ -549,8 +550,19 @@ values</p>
 </section>
 <section id="qbnrejection-module">
 <h2>qBNRejection module<a class="headerlink" href="#qbnrejection-module" title="Link to this heading"></a></h2>
-<p>The <cite>qInference</cite> class is used to perform inference via rejection sampling from a Quantum Circuit representation of a Bayesian Network. The class leverages Qiskit to perform quantum inference, comparing its efficiency with classical methods.</p>
-<p>Each function in this class corresponds to specific equations and concepts in the paper, providing a clear link between theory and practice : EN TRAVAUX</p>
+<p>The <cite>qInference</cite> class implementation is based on the principles and algorithms presented in the paper <a class="reference external" href="https://arxiv.org/abs/1402.7359">Quantum Inference on Bayesian Networks</a> by Guang Hao Low et al. The class provides a comprehensive framework for performing quantum inference, integrating key concepts from the paper into its methods. Below is a detailed explanation of how the class aligns with the paper:</p>
+<ul class="simple">
+<li><p><strong>Quantum Representation of Bayesian Networks</strong>:
+- The class constructs the quantum operator ( A ) using the method <cite>getA</cite>, which builds a quantum circuit representing the Bayesian network’s joint distribution, as discussed in Section VI.B of the paper.</p></li>
+<li><p><strong>Amplitude Amplification</strong>:
+- The methods <cite>getAdjoint</cite>, <cite>getB</cite>, <cite>getZ</cite>, <cite>getS</cite>, and <cite>getG</cite> implement the components required for the Grover iterate, which is central to the amplitude amplification process described in Section IV.</p></li>
+<li><p><strong>Quantum Rejection Sampling Algorithm</strong>:
+- The method <cite>makeInference</cite> orchestrates the rejection sampling process using amplitude amplification. This algorithm is detailed in Section V and Algorithm 1 of the paper.</p></li>
+<li><p><strong>Phase Flip Operators</strong>:
+- The construction of phase flip operators, which are crucial for amplitude amplification, is implemented in the methods <cite>getB</cite>, <cite>getZ</cite>, and <cite>getS</cite>. These methods align with the explanations in Section VI.C.</p></li>
+<li><p><strong>Evidence Handling and Sampling</strong>:
+- The method <cite>getEvidenceQuBits</cite> maps classical evidence to quantum states, preparing them for quantum operations. The <cite>getSample</cite> method utilizes amplitude amplification to generate samples that match the evidence, following the procedure outlined in Section V.</p></li>
+</ul>
 <dl class="py class">
 <dt class="sig sig-object py">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qBN.qBNRejection.</span></span><span class="sig-name descname"><span class="pre">qInference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qbn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">qBayesNet</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
@@ -639,7 +651,7 @@ Operator of the Quantum Circuit representing the Baysian Network</p>
 
 <dl class="py method">
 <dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">getEvidenceQuBits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.getEvidenceQuBits"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<span class="sig-name descname"><span class="pre">getEvidenceQuBits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">evidence:</span> <span class="pre">dict[slice(&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">None)]</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.getEvidenceQuBits"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Gives qubit representation of evidence in Baysian Network</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -698,7 +710,7 @@ Operator of the Quantum Circuit representing the Baysian Network</p>
 
 <dl class="py method">
 <dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">getSample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">A:</span> <span class="pre">~qiskit.quantum_info.operators.operator.Operator,</span> <span class="pre">G:</span> <span class="pre">~qiskit.quantum_info.operators.operator.Operator,</span> <span class="pre">evidence:</span> <span class="pre">dict[slice(typing.Union[str,</span> <span class="pre">int],</span> <span class="pre">&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">None)],</span> <span class="pre">verbose:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.getSample"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<span class="sig-name descname"><span class="pre">getSample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">A:</span> <span class="pre">~qiskit.quantum_info.operators.operator.Operator,</span> <span class="pre">G:</span> <span class="pre">~qiskit.quantum_info.operators.operator.Operator,</span> <span class="pre">evidence:</span> <span class="pre">dict[slice(typing.Union[str,</span> <span class="pre">int],</span> <span class="pre">&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">None)],</span> <span class="pre">verbose:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict[slice(&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">None)]</span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.getSample"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Generate one sample from evidence (Algorithm 1)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -736,7 +748,7 @@ Operator of the Quantum Circuit representing the Baysian Network</p>
 
 <dl class="py method">
 <dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">makeInference</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.makeInference"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<span class="sig-name descname"><span class="pre">makeInference</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict[slice(typing.Union[str,</span> <span class="pre">int],</span> <span class="pre">list[float],</span> <span class="pre">None)]</span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.makeInference"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Performs rejection sampling on Quantum Circuit representation of
 Baysian Network</p>
 <dl class="field-list simple">
@@ -773,7 +785,7 @@ Baysian Network</p>
 
 <dl class="py method">
 <dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">setEvidence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.setEvidence"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<span class="sig-name descname"><span class="pre">setEvidence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">evidence:</span> <span class="pre">dict[slice(typing.Union[str,</span> <span class="pre">int],</span> <span class="pre">&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">None)]</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.setEvidence"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Sets the evidence of the rejection sampler</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -796,26 +808,7 @@ Baysian Network</p>
 <dl class="py method">
 <dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">useFragmentBN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/qBN/qBNRejection.html#qInference.useFragmentBN"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
-<dd><p>Updates the Bayesian network fragment based on the given evidence and target nodes.</p>
-<p>This method takes sets of evidence and target nodes, integrates them with the
-current evidence, and then updates the internal quantum Bayesian network (qBN)
-by installing all ascendants of the nodes in the combined set of evidence and
-target nodes. Essentially, it focuses on a specific fragment or piece of the
-larger Bayesian network.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>evidence</strong> (<em>set</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em><em>int</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – A set of nodes considered as evidence. These nodes are usually observed or
-known variables. If not provided, an empty set is used by default.</p></li>
-<li><p><strong>target</strong> (<em>set</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em><em>int</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – A set of target nodes whose ancestors need to be installed in the Bayesian
-network fragment. If not provided, an empty set is used by default.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 </dd></dl>
 

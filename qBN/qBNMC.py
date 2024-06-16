@@ -105,9 +105,9 @@ class qBayesNet:
             pyAgrum Bayesian Network
 
         """
+
         self.bn = bn
         self.n_qb_map = self.mapNodeToQBit(self.bn.nodes())
-
 
     def mapNodeToQBit(self, nodes: set[int]) -> dict[int: list[int]]:
         """
@@ -227,7 +227,7 @@ class qBayesNet:
         Returns
         -------
         list[dict[Union[str, int]: int]]
-            List containting dictionnaries with variable names as keys and their
+            List containting dicrionnaries with variable names as keys and their
             corresponding state as values
         
         """
@@ -390,10 +390,10 @@ class qBayesNet:
                                  param_qbs: dict[int, int], 
                                  param_nodes: dict[Union[str, int]: int] = None, 
                                  control_qbs: list[int] = None, 
-                                 verbose: int = 0) -> None:
+                                 verbose: int = 0) -> Operator:
         """
         Adds to the Quantum Circuit a series of rotations that 
-        maps the probabilities of the variable to their corresponding qubits (Fig9) (eq18)
+        maps the probabilities of the variable to their corresponding qubits        (Fig9) (eq18)
 
         Parameters
         ---------
@@ -402,37 +402,43 @@ class qBayesNet:
         node: Union[str, int]
             Name or id of the corresponding node
         target_qbs: list[int]
-            List containing the IDs of the qubits representing the variable in the circuit
+            List containing the IDs of the qubits representing the variable in 
+            the circuit
         param_qbs: dict[int, int]
-            Dictionary with qubit id as keys and their quantum state as values (used for recursion)
+            Dictionary with qubit id as keys and their quantum state as values 
+            (used for recursion)
         param_nodes: dict[Union[str, int]: int]
             Dictionary with variable name as keys and their state as values
         control_qbs:
-            List containing the IDs of qubits representing parent nodes of the variable in DAG
+            List containing the IDs of qubits representing parent nodes of 
+            the variable in DAG
         
         Returns
         -------
-        None
+        Operator
+
         """
 
-        if verbose > 0:
-            print(f"\nmultiQubitRotation call: node = {node}, target_qbs = {target_qbs}, param_qbs = {param_qbs}, param_nodes = {param_nodes}, control_qbs = {control_qbs}")
+        if verbose > 0 :
+            print(f"\nmultiQubitRotation call : node = {node}, \
+                  target_qb = {target_qbs}, param_qbs = {param_qbs}, \
+                  param_nodes = {param_nodes}, control_qbs = {control_qbs}")
 
-        if param_nodes is None:
+        if param_nodes == None:
             param_nodes = dict()
-        if control_qbs is None:
+        if control_qbs == None:
             control_qbs = list()
 
         target_copy = target_qbs.copy()
 
         params_qb_list = sorted(list(param_qbs))
 
-        # Calculate probabilities P(q_l = 1) and P(q_l = 0)
-        P1 = self.getProbability(1, node, target_copy[0], param_qbs, param_nodes, verbose=verbose)
-        P0 = self.getProbability(0, node, target_copy[0], param_qbs, param_nodes, verbose=verbose)
+        P1 = self.getProbability(1, node, target_copy[0], 
+                                 param_qbs, param_nodes, verbose=verbose)
+        P0 = self.getProbability(0, node, target_copy[0], 
+                                 param_qbs, param_nodes, verbose=verbose)
 
-        # Calculate the rotation angle theta
-        theta = 2 * np.arctan(np.sqrt(P1 / P0)) if P0 != 0 else np.pi
+        theta = np.pi if P0 == 0 else 2*np.arctan(np.sqrt(P1/P0))
 
         if verbose > 0:
             print(f"P1 = {P1}, P0 = {P0}")
@@ -441,49 +447,44 @@ class qBayesNet:
         RY = RYGate(theta)
         X = XGate()
 
-        def unique_qargs(qargs):
-            """ Helper function to ensure unique qubits in qargs """
-            seen = set()
-            return [x for x in qargs if not (x in seen or seen.add(x))]
 
-        if len(target_copy) == 1:  # Base case
-            if len(param_qbs) + len(control_qbs) > 0:
-                RY = RY.control(len(param_qbs) + len(control_qbs))
+        if len(target_copy) == 1: #base case
 
-            qargs = unique_qargs(control_qbs + params_qb_list + [target_copy[0]])
-            circuit.append(RY, qargs=qargs)
+            if len(param_qbs)+len(control_qbs) > 0:
+                RY = RY.control(len(param_qbs)+len(control_qbs))
 
-        else:  # Recursion
-            if len(param_qbs) + len(control_qbs) > 0:
-                RY = RY.control(len(param_qbs) + len(control_qbs))
-                X = X.control(len(param_qbs) + len(control_qbs))
+            qargs = control_qbs + params_qb_list + [target_copy[0]]
+            circuit.append(RY, qargs = qargs)
 
-            qargs = unique_qargs(control_qbs + params_qb_list + [target_copy[0]])
-            circuit.append(RY, qargs=qargs)
+        else: #recursion
+
+            if len(param_qbs)+len(control_qbs) > 0:
+                RY = RY.control(len(param_qbs)+len(control_qbs))
+                X = X.control(len(param_qbs)+len(control_qbs))
+
+            qargs = control_qbs + params_qb_list + [target_copy[0]]
+            circuit.append(RY, qargs = qargs)
 
             popped_qb = target_copy.pop(0)
 
-            self.multiQubitRotation(circuit, node, target_copy,
-                                    {**param_qbs, **{popped_qb: 1}},
+            self.multiQubitRotation(circuit, node, target_copy, 
+                                    {**param_qbs, **{popped_qb: 1}}, 
                                     param_nodes, control_qbs, verbose=verbose)
 
-            qargs = unique_qargs(control_qbs + params_qb_list + [popped_qb])
-            circuit.append(X, qargs=qargs)
+            qargs = control_qbs + params_qb_list + [popped_qb]
+            circuit.append(X, qargs = qargs)
 
-            self.multiQubitRotation(circuit, node, target_copy,
-                                    {**param_qbs, **{popped_qb: 0}},
+            self.multiQubitRotation(circuit, node, target_copy, 
+                                    {**param_qbs, **{popped_qb: 0}}, 
                                     param_nodes, control_qbs, verbose=verbose)
 
-            qargs = unique_qargs(control_qbs + params_qb_list + [popped_qb])
-            circuit.append(X, qargs=qargs)
+            qargs = control_qbs + params_qb_list + [popped_qb]
+            circuit.append(X, qargs = qargs)
 
         if verbose > 0:
             print(circuit.draw())
 
         return
-
-
-
 
     def buildCircuit(self, add_measure: bool = True,
                            verbose: int = 0) -> QuantumCircuit:
@@ -512,19 +513,19 @@ class qBayesNet:
         internal_nodes = [n_id for n_id in self.bn.topologicalOrder() if n_id in internal_nodes]
 
         for n_id in root_nodes:
-            print(f"Calling multiQubitRotation for root node {n_id}")
+
             self.multiQubitRotation(circuit, n_id, self.n_qb_map[n_id], {}, 
                                     verbose=verbose)
 
         for n_id in internal_nodes:
-            print(f"Processing internal node {n_id}")
+
             parent_id_set = self.bn.parents(n_id)
             parent_qbit_list = list(np.hstack([self.n_qb_map[p_id] 
                                               for p_id in parent_id_set])) 
             #list containing qubit id of each of the parents in order
 
             for params_dict in self.getAllParentSates(n_id): #params is dict
-                print(f"Calling multiQubitRotation for internal node {n_id} with params {params_dict}")
+
                 width_dict = {p_id: self.getWidth(p_id) for p_id in parent_id_set}
                 bin_params = self.getBinarizedParameters(width_dict, params_dict)
 
@@ -548,7 +549,6 @@ class qBayesNet:
             circuit.measure_all()
 
         return circuit
-
 
     def aerSimulation(self, circuit: QuantumCircuit,
                           shots: int = 10000) -> dict[Union[str, int]: list[float]]:
@@ -607,7 +607,7 @@ class qBayesNet:
         Returns
         -------
         dict[Union[str, int]: Potential]
-            Dictionary with variable names as keys, and corresponding Potential as 
+            Dictionary with variable names as keys, and corresponding Potentail as 
             values
 
         """

@@ -1,9 +1,9 @@
 import unittest
-from unittest.mock import patch, MagicMock
-from pyAgrum import DiscreteVariable, Instantiation, BayesNet, LabelizedVariable, Potential
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../'))
+from unittest.mock import patch, MagicMock
+from pyAgrum import DiscreteVariable, Instantiation, BayesNet, LabelizedVariable, Potential
 from qBN.qBNMC import qBayesNet
 from qiskit import QuantumRegister, QuantumCircuit
 from qiskit.circuit.library import RYGate, XGate

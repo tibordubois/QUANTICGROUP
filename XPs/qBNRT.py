@@ -1,7 +1,6 @@
 import sys
 if sys.path[-1] != "..": sys.path.append("..")
 
-from source.qBN.qBNMC import qBayesNet
 from source.qBN.qBNRejection import qInference
 
 from qiskit import QuantumCircuit, transpile
@@ -9,14 +8,11 @@ from qiskit.converters import circuit_to_dag
 
 from qiskit_ibm_runtime.ibm_backend import IBMBackend
 
-from pyAgrum import LazyPropagation
-
-import matplotlib.pyplot as plt
-
 
 class qRuntime:
     """
-    Class used to evaluate the thoeretical time of execution of a quantum sampler on a quantum device
+    Class used to evaluate the thoeretical time of execution of a quantum sampler 
+    on a quantum device
 
     Attributes
     ----------
@@ -53,7 +49,8 @@ class qRuntime:
 
     def getAtime(self, backend: IBMBackend = None, verbose = 0) -> float:
         """
-        Estimates the theoredical runtime of the quantum circuit from given backend in seconds
+        Estimates the theoredical runtime of the quantum circuit from given backend 
+        in seconds
 
         Parameters
         ---------
@@ -80,7 +77,7 @@ class qRuntime:
         res = 0.0
 
         for key, val in circuit_depth.items():
-            instruction = next(iter(backend.target[key].values()), None) #to be revisited
+            instruction = next(iter(backend.target[key].values()), None) 
             res += instruction.duration * val
 
         if verbose > 0:
@@ -91,7 +88,8 @@ class qRuntime:
 
     def getGtime(self, backend: IBMBackend = None, verbose = 0) -> float:
         """
-        Estimates the theoredical runtime of a Grover iterate from given backend in seconds
+        Estimates the theoredical runtime of a Grover iterate from given backend 
+        in seconds
 
         Parameters
         ---------
@@ -126,7 +124,7 @@ class qRuntime:
         res = 0.0
 
         for key, val in circuit_depth.items():
-            instruction = next(iter(backend.target[key].values()), None) #to be revisited
+            instruction = next(iter(backend.target[key].values()), None) 
             res += instruction.duration * val
         
         if verbose > 0:
@@ -137,11 +135,13 @@ class qRuntime:
 
     def rejectionSamplingRuntime(self) -> float:
         """
-        Uses gate execution time from before to compute the total time of the rejection sampling process 
+        Uses gate execution time from before to compute the total time of the 
+        rejection sampling process 
 
         Returns
         -------
         float
+            Estimate of the circuit runtime in seconds
 
         """
         if self.A_time is None or self.G_time is None:

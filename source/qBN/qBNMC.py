@@ -2,14 +2,11 @@ from pyAgrum import BayesNet, Instantiation, Potential
 
 import numpy as np
 
-import re
-
 from typing import Union #List and Dict are deprecated (python 3.9)
 
 from qiskit import QuantumRegister, QuantumCircuit, transpile
 from qiskit.circuit.library import RYGate, XGate
 from qiskit.quantum_info import Operator
-#from qiskit.visualization import plot_distribution
 
 from qiskit_aer import AerSimulator
 
@@ -25,14 +22,17 @@ class qBayesNet:
 
     Attributes
     ----------
+
     bn: BayesNet
         pyAgrum Bayesian Network
+
     n_qb_map: dict[int: list[int]]
         Dictionary where keys are IDs of variables in bn and values are
         the list of IDs of the associated qubits
 
     Methods
     -------
+
     mapNodeToQBit(self) -> dict[int: list[int]]
         Maps variables IDs from Baysian Network to a list of qubits IDs
         to be implemented in a Quantum Circuit
@@ -321,9 +321,9 @@ class qBayesNet:
                              param_nodes: dict[Union[str, int]: int] = None, 
                              verbose: int = 0) -> float:
         """
-        Gives the probability that the qb_id qubit state equals to the given value conditioned to other qubits
-        representing the variable and other nodes in the Bayesian Network
-        (eq18) (eq20)
+        Gives the probability that the qb_id qubit state equals to the given value 
+        conditioned to other qubits representing the variable and other nodes in the 
+        Bayesian Network (eq18) (eq20)
 
         Parameters
         ----------
@@ -392,8 +392,8 @@ class qBayesNet:
                                  control_qbs: list[int] = None, 
                                  verbose: int = 0) -> Operator:
         """
-        Adds to the Quantum Circuit a series of rotations that 
-        maps the probabilities of the variable to their corresponding qubits        (Fig9) (eq18)
+        Adds to the Quantum Circuit a series of rotations that maps the probabilities 
+        of the variable to their corresponding qubits(Fig9) (eq18)
 
         Parameters
         ---------
@@ -510,7 +510,8 @@ class qBayesNet:
 
         root_nodes = self.getRootNodes()
         internal_nodes = self.bn.nodes().difference(root_nodes)
-        internal_nodes = [n_id for n_id in self.bn.topologicalOrder() if n_id in internal_nodes]
+        internal_nodes = [n_id for n_id in self.bn.topologicalOrder() \
+                          if n_id in internal_nodes]
 
         for n_id in root_nodes:
 
@@ -587,7 +588,8 @@ class qBayesNet:
             for state in range(self.bn.variable(n_id).domainSize()):
                 pattern = np.binary_repr(state, width=width)
                 matches = [val for key, val in counts_aer.items()
-                           if key[::-1][self.n_qb_map[n_id][0]: self.n_qb_map[n_id][-1] + 1]
+                           if key[::-1][self.n_qb_map[n_id][0]: \
+                                        self.n_qb_map[n_id][-1] + 1]
                            == pattern]
                 probability_vector.append(np.sum(matches)/shots)
 
@@ -622,9 +624,6 @@ class qBayesNet:
             res[self.bn.variable(n_id).name()] = portential
 
         return res
-
-    def getRMSPE(self):
-        pass
 
 
 

@@ -21,16 +21,91 @@ class qInference:
 
     Attributes
     ----------
+
     qbn: qBayesNet
         Quantum Baysien Network object
+
     q_registers: dict[int: QuantumRegister]
         Quantum Registers used to build the rotation gates
 
+    all_qbits: list[int]
+        List containing all qubit IDs
+
+    evidence: dict[Union[str, int]: int]
+        Dictionary with variable names or IDs as keys and their state as values
+
+    inference_res: dict[Union[str, int]: list[float]]
+        Dictionary with variable names or IDs as keys and their inferred CPTs as values
+
+    max_iter: int
+        Number of iterations (samples)
+
+    log: dict[str, int]
+        Dictionary with gate names as keys and their number of usage in last run as values
+
+    A: QuantumCircuit
+        Quantum Circuit of q-sample preparator
+
+    G: QuantumCircuit
+        Quantum Circuit of Grover's iteration
+
     Methods
     -------
-    getA(self) -> Operator:
-        Gives the Operator object represenation of the Quantum Circuit representing
-        the Baysian Network
+
+    maxIter(self) -> None:
+        Returns the maximum iteration number
+
+    addA(self, circuit: QuantumCircuit) -> None:
+        Composes the quantum sample preparation Operator object
+        Operator of the Quantum Circuit representing the Baysian Network to circuit
+
+    addInverse(self, circuit: QuantumCircuit, M: QuantumCircuit) -> None:
+        Composes the adjoint operator of M to circuit
+
+    addB(self, circuit: QuantumCircuit, evidence_qbs: dict[int, int]) -> Operator:
+        Composed the B gate of the phase flip operator to circuit (eq7)
+
+    addZ(self, circuit: QuantumCircuit, evidence_qbs: dict[int, int]) -> None:
+        Composes the Z gate of the phase flip operator to circuit (eq7)
+
+    addS(self, circuit: QuantumCircuit, evidence_qbs: dict[int, int]) -> None:
+        Composes the phase flip operator to circuit (eq7)
+
+    addG(self, circuit: QuantumCircuit, A: QuantumCircuit, 
+               evidence_qbs: dict[int, int]) -> None:
+        Composes the grover iterate to circuit
+
+    getGates(self) -> None:
+        Stores A gate and G gate
+
+    transpileGates(self) -> None:
+        Transpiles saved A and G gates with optimization level set to 3
+
+    getEvidenceQuBits(self, evidence: dict[int: int]) -> dict[int, int]:
+        Gives qubit representation of evidence in Baysian Network
+
+    getSample(self, A: Operator, G: Operator,
+                        evidence: dict[Union[str, int]: int],
+                        verbose: int = 0) -> dict[int: int]:
+        Generate one sample from evidence (Algorithm 1)
+
+    makeInference(self, verbose: int = 0) -> dict[Union[str, int]: list[float]]:
+        Performs rejection sampling on Quantum Circuit representation of
+        Baysian Network
+
+    setEvidence(self, evidence: dict[Union[str, int]: int]) -> None:
+        Sets the evidence of the rejection sampler
+
+    setMaxIter(self, max_iter: int = 1000) -> None:
+        Sets the max iteration of the rejection sampler
+
+    posterior(self, node: Union[str, int]) -> Potential:
+        Gives the probability table of the node variable from sampling results
+
+    useFragmentBN(self, evidence: set[Union[str, int]] = None, 
+                            target: set[Union[str, int]] = None) -> None:
+        Uses fragmented Baysian Network to speed up circuit computations
+
     """
 
     def __init__(self, qbn: qBayesNet) -> None:
@@ -54,17 +129,29 @@ class qInference:
         self.A = None
         self.G = None
 
-    def maxIter(self):
+    def maxIter(self) -> None:
+        """
+        Returns the maximum iteration number
+
+        Returns
+        -------
+        int
+            Maximum iteration number
+
+        """
+
         return self.max_iter
 
-    def addA(self, circuit: QuantumCircuit):
-        """Gives the quantum sample preparation Operator object
-        Operator of the Quantum Circuit representing the Baysian Network
+    def addA(self, circuit: QuantumCircuit) -> None:
+        """
+        Composes the quantum sample preparation Operator object
+        Operator of the Quantum Circuit representing the Baysian Network to circuit
 
         Returns
         -------
         Operator
             Quantum gate A
+
         """
 
         A = self.qbn.buildCircuit(add_measure=False)
@@ -72,8 +159,9 @@ class qInference:
         circuit.barrier()
         return
     
-    def addInverse(self, circuit: QuantumCircuit, M: QuantumCircuit):
-        """Gives the adjoint operator of M
+    def addInverse(self, circuit: QuantumCircuit, M: QuantumCircuit) -> None:
+        """
+        Composes the adjoint operator of M to circuit
 
         Parameters
         ----------
@@ -84,12 +172,15 @@ class qInference:
         -------
         Operator
             M adjoint
+
         """
+
         circuit.compose(M.inverse(), inplace=True)
         return
 
-    def addB(self, circuit: QuantumCircuit, evidence_qbs: dict[int, int]) -> Operator:
-        """Gives the B gate of the phase flip operator (eq7)
+    def addB(self, circuit: QuantumCircuit, evidence_qbs: dict[int, int]) -> None:
+        """
+        Composed the B gate of the phase flip operator to circuit (eq7)
 
         Parameters
         ----------
@@ -100,14 +191,16 @@ class qInference:
         -------
         Operator
             Quantum gate B
+
         """
 
         for qb_id, qb_state in evidence_qbs.items():
             if qb_state == 0:
                 circuit.compose(XGate(), [qb_id], inplace=True)
 
-    def addZ(self, circuit: QuantumCircuit, evidence_qbs: dict[int, int]) -> Operator:
-        """Gives the Z gate of the phase flip operator (eq7)
+    def addZ(self, circuit: QuantumCircuit, evidence_qbs: dict[int, int]) -> None:
+        """
+        Composes the Z gate of the phase flip operator to circuit (eq7)
 
         Parameters
         ----------
@@ -118,6 +211,7 @@ class qInference:
         -------
         Operator
             Quantum gate Z
+
         """
 
         rotation = ZGate()
@@ -128,8 +222,9 @@ class qInference:
         circuit.compose(rotation, list(evidence_qbs.keys()), inplace=True)
         return
 
-    def addS(self, circuit: QuantumCircuit, evidence_qbs: dict[int, int]) -> Operator:
-        """Gives the phase flip operator (eq7)
+    def addS(self, circuit: QuantumCircuit, evidence_qbs: dict[int, int]) -> None:
+        """
+        Composes the phase flip operator to circuit (eq7)
 
         Parameters
         ----------
@@ -140,6 +235,7 @@ class qInference:
         -------
         Operator
             Quantum gate S
+
         """
 
         self.addB(circuit, evidence_qbs)
@@ -147,10 +243,10 @@ class qInference:
         self.addB(circuit, evidence_qbs)
         return
 
-    def addG(self, circuit: QuantumCircuit, 
-                   A: QuantumCircuit, 
-                   evidence_qbs: dict[int, int], inplace: bool = True) -> Operator:
-        """Gives the grover iterate
+    def addG(self, circuit: QuantumCircuit, A: QuantumCircuit, 
+                   evidence_qbs: dict[int, int]) -> None:
+        """
+        Composes the grover iterate to circuit
 
         Parameters
         ----------
@@ -163,6 +259,7 @@ class qInference:
         -------
         Operator
             Quantum gate G
+
         """
 
         res = None
@@ -178,10 +275,12 @@ class qInference:
         res = circuit.compose(A, inplace=True)
         circuit.barrier(label='A')
 
-        return res
+        return
     
     def getGates(self) -> None:
         """
+        Stores A gate and G gate
+
         """
 
         evidence_n_id = {self.qbn.bn.nodeId(self.qbn.bn.variable(key)): val
@@ -196,7 +295,10 @@ class qInference:
 
     def transpileGates(self) -> None:
         """
+        Transpiles saved A and G gates with optimization level set to 3
+
         """
+    
         self.A = transpile(self.A, optimization_level=3)
         self.G = transpile(self.G, optimization_level=3)
 
@@ -215,6 +317,7 @@ class qInference:
             Dictionary with qubit IDs as keys and their quantum state as values
 
         """
+
         res = dict()
 
         for n_id, n_state in evidence.items():
@@ -238,6 +341,8 @@ class qInference:
             Gate G
         evidence: dict[Union[str, int]: int]
             Dictionary with variable IDs as keys and their state as values
+        verbose: int = 0
+            Verbose of function
 
         Returns
         -------
@@ -253,7 +358,6 @@ class qInference:
         circuit.measure_all(add_bits=False)
 
         k = -2
-
 
         while True:
 
@@ -271,8 +375,8 @@ class qInference:
             self.log['G'] += 2**(k+1)
 
 
-            run_res = {self.qbn.bn.nodeId(self.qbn.bn.variable(node)): state.index(1.0)
-                       for node, state in run_res.items()}
+            run_res = {self.qbn.bn.nodeId(self.qbn.bn.variable(node)): \
+                       state.index(1.0) for node, state in run_res.items()}
 
             if verbose > 0:
                 print(f"k = {k+1}, A: +1, G: +{2**(k+1)}")
@@ -295,77 +399,15 @@ class qInference:
 
         return run_res
 
-    def getSample2(self, A: QuantumCircuit, G: QuantumCircuit,
-                        evidence: dict[Union[str, int]: int],
-                        optimisation_level: int = None,
-                        verbose: int = 0) -> dict[int: int]:
-        """Generate one sample from evidence (Algorithm 1)
-
-        Parameters
-        ----------
-        A: QuantumCircuit
-            Gate A
-        G: QuantumCircuit
-            Gate G
-        evidence: dict[Union[str, int]: int]
-            Dictionary with variable IDs as keys and their state as values
-        optimisation_level: int = 1
-            Optimisation level for generate_preset_pass_manager fuction,
-            ranges from 0 to 3
-
-        Returns
-        -------
-        dict[int, int]
-            Dictionary with variable IDs as keys and their state as values
+    def makeInference(self, verbose: int = 0) -> dict[Union[str, int]: list[float]]:
         """
-
-        k = -1
-
-        while True:
-            k = k + 1
-
-            circuit = QuantumCircuit(*list(self.q_registers.values()))
-            circuit.compose(A, inplace=True)
-
-            for i in range(2**k):
-                circuit.compose(G, inplace=True)
-
-            circuit.measure_all()
-
-            run_res = self.qbn.aerSimulation(circuit, optimisation_level, 1)
-
-            run_res = {self.qbn.bn.nodeId(self.qbn.bn.variable(node)): state.index(1.0)
-                       for node, state in run_res.items()}
-
-            if verbose > 0: print(f"run_res = {run_res}")
-
-            match_evidence = True
-
-            for node, state in evidence.items():
-                n_id = self.qbn.bn.nodeId(self.qbn.bn.variable(node))
-                if verbose > 0: 
-                    print(f"node = {node}, \
-                            state = {state}, \
-                            run_res[node] = {run_res[n_id]}")
-                if run_res[n_id] != state:
-                    match_evidence = False
-                    break
-
-            if match_evidence:
-                break
-
-        return run_res
-
-    def makeInference(self, verbose = 0) -> dict[Union[str, int]: list[float]]:
-        """Performs rejection sampling on Quantum Circuit representation of
+        Performs rejection sampling on Quantum Circuit representation of
         Baysian Network
 
         Parameters
         ----------
-        evidence: dict[Union[str, int]: int]
-            Dictionary with variable IDs as keys and their state as values
-        num_samples: int = 1000
-            Number of samples
+        verbose: int = 0
+            Verbose of function
 
         Returns
         -------
@@ -382,7 +424,8 @@ class qInference:
                for node in self.qbn.n_qb_map.keys()}
 
         for i in range(self.max_iter):
-            sample = self.getSample(self.A, self.G, self.evidence, verbose = 1 if verbose == 2 else 0)
+            sample = self.getSample(self.A, self.G, self.evidence, 
+                                    verbose = 1 if verbose == 2 else 0)
 
             for node, state in sample.items():
                 res[node][state] += 1.0/self.max_iter
@@ -421,7 +464,7 @@ class qInference:
 
     def posterior(self, node: Union[str, int]) -> Potential:
         """
-        Give the probability table of the node variable from sampling results
+        Gives the probability table of the node variable from sampling results
 
         Parameters
         ----------
@@ -443,9 +486,20 @@ class qInference:
 
         return potential
 
-    def useFragmentBN(self, evidence: set[Union[str, int]] = None, target: set[Union[str, int]] = None) -> None:
+    def useFragmentBN(self, evidence: set[Union[str, int]] = None, 
+                            target: set[Union[str, int]] = None) -> None:
         """
+        Uses fragmented Baysian Network to speed up circuit computations
+
+        Parameters
+        ----------
+        evidence: set[Union[str, int]] = None
+            Evidence variables to be added to the ones already stored in object
+        target: set[Union[str, int]] = None
+            Target varaible (default is set to empty set)
+
         """
+
         if evidence is None: evidence = set()
         if target is None: target = set()
         evidence = evidence.union(self.evidence.keys())

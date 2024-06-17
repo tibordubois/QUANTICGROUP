@@ -1,10 +1,10 @@
 #parameters
 
-scaling_min = 4
-scaling_max = 5.5
+scaling_min = 4.5
+scaling_max = 5.1
 num_runs = 100
 num_evidence_var = 3
-max_iter = 1000
+max_iter = 100
 
 qinf_rt_list = list()
 qinf_me_list = list()
@@ -78,7 +78,7 @@ def modifyBinaryCPT(cpt, state, scaling):
 
 #Bayeset setup
 
-asia_bn = gum.loadBN("asia.bif")
+asia_bn = gum.loadBN("../tutorials/bayes_nets/asia.bif")
 qbn = qBayesNet(asia_bn)
 qc = qbn.buildCircuit(add_measure=True)
 
@@ -125,7 +125,7 @@ for i in range(num_runs):
     qrt = qRuntime(qinf, backend)
     qinf.setEvidence(evidence)
     qinf.setMaxIter(max_iter)
-    qinf.makeInference(verbose=0)
+    qinf.makeInference(verbose=1)
     qinf_run_time = qrt.rejectionSamplingRuntime()
     qinf_max_error = (qinf.posterior(target).toarray() - ie.posterior(target).toarray()).max()
     print(f"\tQS - Run time: {qinf_run_time}, Max Error: {qinf_max_error}")

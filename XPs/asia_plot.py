@@ -39,7 +39,8 @@ service = QiskitRuntimeService(
     token='1b6910ff55c1d3853e5c8e2ca2b0dbbc3b415fb897d26a6c272c63254527581c824aea1180585f706ab8263318f3c553549d136ca32952ef401abb54011eee33'
 )
 
-backend = service.get_backend("ibm_brisbane")
+backend = service.backend("ibm_brisbane")
+print("backend: OK")
 
 #functions
 
@@ -77,15 +78,20 @@ def modifyBinaryCPT(cpt, state, scaling):
         return [modifyBinaryCPT(cpt[0], state, scaling), modifyBinaryCPT(cpt[1], state, scaling)]
 
 #Bayeset setup
+print("+ Loading ASIA")
+asia_bn = gum.loadBN("asia.bif")
 
-asia_bn = gum.loadBN("../tutorials/bayes_nets/asia.bif")
+print("+ Building qBayesNet")
 qbn = qBayesNet(asia_bn)
+
+print("+ Building circuit")
 qc = qbn.buildCircuit(add_measure=True)
 
 #ploting
-
+print("ploting ",end="")
 for i in range(num_runs):
-
+    if i % 10 == 0:
+        print(".",end="")
     #Randomly Chosen Evidence and Target
     n_ids = asia_bn.nodes()
     evidence = {ev_id: random.randint(0,1) for ev_id in randomChoice(n_ids, num_evidence_var)}
@@ -125,7 +131,7 @@ for i in range(num_runs):
     qrt = qRuntime(qinf, backend)
     qinf.setEvidence(evidence)
     qinf.setMaxIter(max_iter)
-    qinf.makeInference(verbose=1)
+    qinf.makeInference(verbose=0)
     qinf_run_time = qrt.rejectionSamplingRuntime()
     qinf_max_error = (qinf.posterior(target).toarray() - ie.posterior(target).toarray()).max()
     print(f"\tQS - Run time: {qinf_run_time}, Max Error: {qinf_max_error}")

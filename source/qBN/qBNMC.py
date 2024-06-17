@@ -229,7 +229,7 @@ class qBayesNet:
         list[dict[Union[str, int]: int]]
             List containting dicrionnaries with variable names as keys and their
             corresponding state as values
-        
+
         """
 
         res = list()
@@ -256,7 +256,7 @@ class qBayesNet:
         -------
         dict[int: QuantumRegister]
             Dictionary with variable IDs as keys and Quantum Registers as values
-       
+
         """
 
         res = dict()
@@ -290,7 +290,7 @@ class qBayesNet:
         list[bool]
             List where True corresponds to a binary string (list of 0s and 1s)
             satisfying the condition given by targets, and False otherwise
-        
+
         """
 
         if verbose > 0:

@@ -458,8 +458,3 @@ class qInference:
         self.qbn = qBayesNet(fbn.toBN())
         self.q_registers = self.qbn.getQuantumRegisters()
         self.all_qbits = np.hstack(list(self.qbn.n_qb_map.values())).tolist()
-<<<<<<< HEAD:qBN/qBNRejection.py
-
-
-=======
->>>>>>> 7b956a8 (asia_plot):source/qBN/qBNRejection.py

@@ -1,13 +1,11 @@
-from qBN.qBNMC import qBayesNet
-from qBN.qBNRejection import qInference
+import sys
+if sys.path[-1] != "..": sys.path.append("..")
 
+from source.qBN.qBNMC import qBayesNet
+from source.qBN.qBNRejection import qInference
 
-from qiskit import ClassicalRegister, QuantumCircuit, transpile
+from qiskit import QuantumCircuit, transpile
 from qiskit.converters import circuit_to_dag
-
-from qiskit_aer import AerSimulator
-
-from qiskit.quantum_info import Operator
 
 from qiskit_ibm_runtime.ibm_backend import IBMBackend
 
@@ -70,10 +68,8 @@ class qRuntime:
         """
         if backend == None: backend = self.default_backend
 
-        A = self.qinf.getA() #gate depth may be shorter due to optimisation
-
-        circuit = QuantumCircuit(*list(self.qinf.q_registers.values()))
-        circuit.compose(A, inplace=True)
+        circuit  = QuantumCircuit(*list(self.qinf.q_registers.values()))
+        self.qinf.addA(circuit) #gate depth may be shorter due to optimisation
 
         transpiled_circuit = transpile(circuit, backend=backend)
 
@@ -112,14 +108,14 @@ class qRuntime:
 
         evidence_n_id = {self.qinf.qbn.bn.nodeId(self.qinf.qbn.bn.variable(key)): val
                          for key, val in self.qinf.evidence.items()}
-        
+
         evidence_qbs = self.qinf.getEvidenceQuBits(evidence_n_id)
 
-        A = self.qinf.getA() #gate depth may be shorter due to optimisation
-        G = self.qinf.getG(A, evidence_qbs=evidence_qbs)
+        A  = QuantumCircuit(*list(self.qinf.q_registers.values()))
+        self.qinf.addA(A)
 
         circuit = QuantumCircuit(*list(self.qinf.q_registers.values()))
-        circuit.compose(G, inplace=True)
+        self.qinf.addG(circuit, A, evidence_qbs, inplace=False)
 
         transpiled_circuit = transpile(circuit, backend=backend)
 
@@ -155,42 +151,3 @@ class qRuntime:
         res += self.qinf.log["A"] * self.A_time
         res += self.qinf.log["G"] * self.G_time
         return res
-
-    def compareInference(self, ie = None, ax=None):
-        """
-        Compares 2 inference by plotting all the points from qInference and ie
-        
-        """
-
-        bn = self.qinf.qbn.bn
-
-        if ie is None:
-            ie = LazyPropagation(bn)
-            ie.setEvidence(self.qinf.evidence)
-            ie.makeInference()
-
-        exact=[]
-        appro=[]
-        errmax=0
-        for node in bn.nodes():
-            # potentials as list
-            print(node, ie.posterior(node).tolist())
-            exact += ie.posterior(node).tolist()
-            appro += self.qinf.posterior(node).tolist()
-            errmax=max(errmax,
-                    (ie.posterior(node) - self.qinf.posterior(node)).abs().max())
-    
-        if errmax < 1e-10: errmax=0
-        if ax == None:
-            fig = plt.Figure(figsize=(4,4))
-            ax = plt.gca() # default axis for plt
-        
-           
-        ax.plot(exact,appro,'ro')
-        ax.set_title("{} vs {}\n Max iter {} \nMax error {:2.4} in {:2.4} seconds".format(
-            str(type(ie)).split(".")[2].split("_")[0][0:-2], # name of first inference
-            str(type(self.qinf)).split(".")[2], # name of second inference
-            self.qinf.max_iter,
-            errmax,
-            self.rejectionSamplingRuntime())
-            )

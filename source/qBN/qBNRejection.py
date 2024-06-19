@@ -14,9 +14,9 @@ from pyAgrum import Potential, BayesNetFragment
 
 class qInference:
     """
-    Class used to perform inference via rejection sampling from a Quantum Circuit
+    Class to perform inference via rejection sampling from a Quantum Circuit
     representation of a Bayesian Network
-    Based on the paper:
+    Based on the publication:
     Quantum Inference on Bayesian Networks - Guang Hao Low
 
     Attributes
@@ -35,13 +35,15 @@ class qInference:
         Dictionary with variable names or IDs as keys and their state as values
 
     inference_res: dict[Union[str, int]: list[float]]
-        Dictionary with variable names or IDs as keys and their inferred CPTs as values
+        Dictionary with variable names or IDs as keys and their inferred CPTs as 
+        values
 
     max_iter: int
         Number of iterations (samples)
 
     log: dict[str, int]
-        Dictionary with gate names as keys and their number of usage in last run as values
+        Dictionary with gate names as keys and their number of usage in last run as 
+        values
 
     A: QuantumCircuit
         Quantum Circuit of q-sample preparator
@@ -243,7 +245,7 @@ class qInference:
         self.addB(circuit, evidence_qbs)
         return
 
-    def addG(self, circuit: QuantumCircuit, A: QuantumCircuit, 
+    def addG(self, circuit: QuantumCircuit, A: QuantumCircuit, \
                    evidence_qbs: dict[int, int]) -> None:
         """
         Composes the grover iterate to circuit
@@ -262,28 +264,25 @@ class qInference:
 
         """
 
-        res = None
-
         all_qbits = np.ravel(list(self.qbn.n_qb_map.values())).tolist()
 
-        res = self.addS(circuit, evidence_qbs)
+        self.addS(circuit, evidence_qbs)
         circuit.barrier(label='S\u2091')
-        res = self.addInverse(circuit, A)
+        self.addInverse(circuit, A)
         circuit.barrier(label='A\u207B\u00B9')
-        res = self.addS(circuit, {qb_id: 0 for qb_id in all_qbits})
+        self.addS(circuit, {qb_id: 0 for qb_id in all_qbits})
         circuit.barrier(label='S\u2080')
-        res = circuit.compose(A, inplace=True)
+        circuit.compose(A, inplace=True)
         circuit.barrier(label='A')
-
         return
-    
+
     def getGates(self) -> None:
         """
         Stores A gate and G gate
 
         """
 
-        evidence_n_id = {self.qbn.bn.nodeId(self.qbn.bn.variable(key)): val
+        evidence_n_id = {self.qbn.bn.nodeId(self.qbn.bn.variable(key)): val \
                          for key, val in self.evidence.items()}
         evidence_qbs = self.getEvidenceQuBits(evidence_n_id)
 
@@ -291,14 +290,14 @@ class qInference:
         self.addA(self.A)
 
         self.G = QuantumCircuit(*list(self.q_registers.values()))
-        self.addG(self.G, self.A, evidence_qbs, inplace=False)
+        self.addG(self.G, self.A, evidence_qbs)
 
     def transpileGates(self) -> None:
         """
         Transpiles saved A and G gates with optimization level set to 3
 
         """
-    
+
         self.A = transpile(self.A, optimization_level=3)
         self.G = transpile(self.G, optimization_level=3)
 
@@ -327,8 +326,8 @@ class qInference:
 
         return res
 
-    def getSample(self, A: Operator, G: Operator,
-                        evidence: dict[Union[str, int]: int],
+    def getSample(self, A: Operator, G: Operator, \
+                        evidence: dict[Union[str, int]: int], \
                         verbose: int = 0) -> dict[int: int]:
         """
         Generate one sample from evidence (Algorithm 1)
@@ -348,7 +347,7 @@ class qInference:
         -------
         dict[int, int]
             Dictionary with variable IDs as keys and their state as values
-        
+
         """
 
         cl_reg = ClassicalRegister(len(self.all_qbits), "meas")
@@ -424,7 +423,7 @@ class qInference:
                for node in self.qbn.n_qb_map.keys()}
 
         for i in range(self.max_iter):
-            sample = self.getSample(self.A, self.G, self.evidence, 
+            sample = self.getSample(self.A, self.G, self.evidence, \
                                     verbose = 1 if verbose == 2 else 0)
 
             for node, state in sample.items():
@@ -486,7 +485,7 @@ class qInference:
 
         return potential
 
-    def useFragmentBN(self, evidence: set[Union[str, int]] = None, 
+    def useFragmentBN(self, evidence: set[Union[str, int]] = None, \
                             target: set[Union[str, int]] = None) -> None:
         """
         Uses fragmented Baysian Network to speed up circuit computations

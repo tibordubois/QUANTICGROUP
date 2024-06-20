@@ -1,0 +1,58 @@
+\section{Amplitude Amplification}
+\label{part2}
+
+Amplitude amplification generalizes Grover's algorithm to enable the search for multiple solutions, thereby serving as a foundational technique for numerous quantum algorithms. Additionally, it offers a square root speedup over the complexity of many classical algorithms. \cite{brassard2002quantum}
+
+\subsection{Description}
+Revisiting the state space $\mathcal{H}$ endowed with its orthonormal basis $(|x \rangle )_{x \in [\![ 0, N-1 ]\!]}$ introduced in section \ref{part1}, the function $f$ now serves as the indicator function of a subset $\{ \omega_k \}_{k \in [\![ 0, M ]\!]}$ containing $M$ elements of $[\![ 0, N-1 ]\!]$.
+We define the projection operator $P=\sum_{k = 0}^m |\omega_k \rangle \langle \omega_k |$ which partitions $\mathcal{H}$ into two orthogonal subspaces:
+\begin{align*}
+	\mathcal{H}_0 &= \mathrm{Ker}P = \mathrm{Vect}(\{ |x\rangle \in \mathcal{H} \ | \ f(x) = 0\}) \\
+    \mathcal{H}_1 &= \ \mathrm{Im}P = \mathrm{Vect}(\{ |x\rangle \in \mathcal{H} \ | \ f(x) = 1\})    
+\end{align*}
+The principle of the algorithm thus involves performing a series of rotations on an initial state $| \psi \rangle \in \mathcal{H}$ to place it in $\mathcal{H}_1$, the vector space of solutions.
+\\[5pt]
+Given a unitary state $| \psi \rangle \in \mathcal{H} = \mathcal{H}_0 \oplus \mathcal{H}_1$,  we can express $| \psi \rangle$ as the following decomposition:
+\begin{align*}
+    |\psi \rangle = \mathrm{cos}(\theta)| \psi_0 \rangle + \mathrm{sin}(\theta)| \psi_1 \rangle
+\end{align*}
+With $\theta = \mathrm{arcsin}(||P |\psi \rangle||_2) \in [0, \pi / 2]$ and 
+\begin{align*}
+|\psi_0 \rangle =&\ \frac{(Id-P) |\psi \rangle}{||(Id-P) |\psi \rangle||_2} \in \mathcal{H}_0 \\ 
+|\psi_1 \rangle =&\ \quad \ \, \frac{P |\psi \rangle}{||P |\psi \rangle||_2} \quad \ \ \in \mathcal{H}_1
+\end{align*}
+the normalized projections of $|\psi \rangle$.
+\\[5pt]
+This decomposition gives rise to the subspace $\mathcal{H}_{\psi} = \mathrm{Vect}(|\psi_0 \rangle, \psi_1 \rangle)$. 
+\\[5pt]
+We observe that the probability of obtaining the initial vector $|\psi \rangle = \sum_{k=0}^{N-1} |k\rangle$ in $\mathcal{H}_1$ without having executed the algorithm is $\mathrm{sin}^2(\theta) = ||P |\psi \rangle||_2^2 = M/N$. This corresponds to the uniform probability of randomly selecting a solution from the set $[\![ 0, N-1 ]\!]$. At the end of the algorithm, this probability approaches 1.
+
+\subsection{Algorithm}
+
+If we revisit the algorithm from the previous section, we find it with the operators defined as follows:
+
+\begin{align*}
+	U_{P} = & \ Id - 2P \\
+    U_{\psi} = & \ 2 | \psi \rangle \langle \psi | - Id
+\end{align*}
+
+\noindent Setting $Q = U_{\psi} U_{P} $, we have:
+\begin{align*}
+	Q | \psi_0 \rangle =& \quad \ \, U_{\psi} | \psi_0 \rangle = \ (2 \mathrm{cos}^2(\theta)-1) | \psi_0 \rangle + \ 2 \mathrm{sin}(\theta)\mathrm{cos}(\theta) | \psi_1 \rangle \\
+    Q | \psi_1 \rangle =&\ -U_{\psi} | \psi_1 \rangle = -2 \mathrm{sin}(\theta)\mathrm{cos}(\theta) | \psi_0 \rangle + (1 + 2 \mathrm{sin}^2(\theta)) | \psi_1 \rangle
+\end{align*}
+knowing that $\langle \psi | \psi_0 \rangle = \mathrm{cos}(\theta)$ and $\langle \psi | \psi_1 \rangle = \mathrm{sin}(\theta)$.
+\\[5pt]
+Thus in $\mathcal{H}_{\psi}$, the operator $Q$ corresponds to a rotation by angle $2\theta$:
+\[
+Q =
+\begin{pmatrix}
+\mathrm{cos}(2\theta) & -\mathrm{sin}(2\theta) \\
+\mathrm{sin}(2\theta) & \mathrm{cos}(2\theta)
+\end{pmatrix}
+\]
+Applying the operator $Q$ on the state $| \psi \rangle$ $r$ times results in:
+\[ Q^r | \psi \rangle = \mathrm{cos}((2r+1)\theta)| \psi_0 \rangle + \mathrm{sin}((2r+1)\theta)| \psi_1 \rangle\]
+The probability of obtaining the desired state upon measurement after $r$ iterations is thus $\mathrm{sin}^2 \left( \left( 2r + 1 \right) \theta \right)$ which is maximized for $r \approx \frac{\pi}{4\theta}$. 
+\\[5pt]
+For $\mathrm{sin}(\theta) \ll 1$, we can further approximate the value of $r$ by: \[\frac{\pi}{4\mathrm{sin}(\theta)} = \frac{\pi}{4} \sqrt{\frac{N}{M}} = \mathcal{O}(\sqrt{N})\]

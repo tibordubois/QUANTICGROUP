@@ -1,0 +1,64 @@
+\clearpage
+\section{Quantum Rejection Sampling}
+
+Based on the construction in section \ref{part4}, we leverage amplitude amplification for performing inference using rejection sampling. For a Bayesian network with $k$ variables each having fewer than $m$ parents, classical sampling of the joint distribution operates in $\mathcal{O}(km)$. Consequently, for $P_e$ the probability of observation, the rejection sampling method has an expected time complexity of $\mathcal{O}(km/P_e)$. As the number of observation variables increases, the computational efficiency of the classical algorithm deteriorates especially when $P_e$ becomes small.
+\\[5pt]
+Rejection sampling operates as an unstructured search for samples within a distribution. Amplitude amplification enhances this process by providing a square root improvement in the efficiency of the search. \cite{low2014quantum}
+
+\subsection{Description}
+
+To simplify the notations, consider a Bayesian network with of $k$ binary states, where $\mathcal{E}$ denotes the set of observed states and $\mathcal{Q}$ the set of target states.
+\\[5pt]
+Let $(e_i)_{i \in [\![1,|\mathcal{E}|]\!]}$ be the qubits representing the elements of $\mathcal{E}$ and $e = e_1e_2\cdots e_{|\mathcal{E}|}$ the corresponding bit string. Similarly, let $q$ represent the bit string corresponding to $\mathcal{Q}$.
+\\[5pt]
+The objective of the algorithm is to sample from the distribution $\mathbb{P}(\mathcal{Q}|\mathcal{E}=e)$.
+\\[5pt]
+Let $A$ be the unitary operator that prepares the q-sample $| \psi \rangle = A |0\rangle ^{\otimes k}$. By rearranging the states of $\mathcal{E}$ appropriately, we can decompose the q-sample into states containing both correct and incorrect observations:
+\begin{align*}
+	|\psi \rangle =&\ \sqrt{1-P_e}\ |\psi_0\rangle \quad + \sqrt{P_e}\ |\psi_1\rangle \\
+	=&\ \sqrt{1-P_e}\ |q\rangle |e_0\rangle + \sqrt{P_e}\ |q\rangle |e_1\rangle
+\end{align*}
+With $P_e = \mathbb{P}(\mathcal{E}=e)$, $|\psi_0 \rangle \in \mathcal{Q} \otimes \mathcal{E}_0$ and $|\psi_1 \rangle \in \mathcal{Q} \otimes \mathcal{E}_1$.
+\\[5pt]
+Here, we can see the function $f$ as:
+\begin{align*}
+    f : \{0,1\}^{|\mathcal{Q}|}\times\{0,1\}^{|\mathcal{E}|} &\longrightarrow \{0,1\} \\
+    (q_1,\hdots,q_{|\mathcal{Q}|}, e_1,\hdots,e_{|\mathcal{E}|}) &\longmapsto
+ \begin{cases}
+ 1 \ \mathrm{if} \ e_1 \cdots \, e_{|\mathcal{E}|} = e \\
+ 0 \ \mathrm{otherwise}
+ \end{cases}
+\end{align*}
+As in the previous sections, $f$ partitions $\mathcal{H} = \mathcal{Q} \otimes \mathcal{E}$ into two orthogonal vector spaces:
+\[\mathcal{H} = \mathcal{Q} \otimes (\mathcal{E}_0 \oplus \mathcal{E}_1) = (\mathcal{Q} \otimes \mathcal{E}_0) \oplus (\mathcal{Q} \otimes \mathcal{E}_1)\]
+Where $\mathcal{Q} \otimes \mathcal{E}_0$ contains the q-samples of the distribution $\mathbb{P}(\mathcal{Q,E}|\mathcal{E}\neq e)$, and $\mathcal{Q} \otimes \mathcal{E}_1$ of $\mathbb{P}(\mathcal{Q,E}|\mathcal{E} = e)$.
+By performing amplitude amplification on the system, we obtain a q-sample of the distribution $\mathbb{P}(\mathcal{Q}|\mathcal{E} = e)$ with high probability.
+
+\subsection{Algorithm}
+\begin{algorithm}[H]
+Let $i$ be the iterator of the outer loop:
+\begin{itemize}
+    \item[1] Initialize $|\psi \rangle = A|0\rangle^{\otimes k}$.
+    \item[2] Apply Grover's iteration $2^i$ times: For $j \in [\![0, 2^i-1]\!]$,
+    \begin{itemize}
+  	 
+   	 \item[2.1] Apply to $|\psi_{(j)}\rangle$ the operator $
+   	 U_{e} = Id_{\mathcal{Q}} \otimes (Id_{\mathcal{E}} -  2|e \rangle \langle e| )
+   	 $
+   	 \item[2.2] Apply to $|\psi_{(j)}\rangle$ the operator $U_{\psi} = 2|\psi\rangle \langle \psi | - Id_{\mathcal{H}} = AU_{0}A^{-1}
+   	 $
+     \\ where $U_{0} = 2|0\rangle \langle 0|^{\otimes k} - Id_{\mathcal{H}}$.
+   	 
+    \end{itemize}
+    \item[] Thus, we end up with $|\psi_{(i+1)}\rangle = AU_{0}A^{-1}U_{e} |\psi_{(i)} \rangle$.
+    \item[3] Measure the observation qubits $\mathcal{E}$ of the resulting state $|\psi_{(2^i)} \rangle$: Let $t$ be the result.
+	\item[4]
+	\begin{itemize}
+   	 \item[4.1] If $t=e$: End of the algorithm.
+   	 \item[4.2] Otherwise: Return to step 1 and increment $i$ by $1$.
+    \end{itemize}
+\end{itemize}
+\end{algorithm}
+\subsection{Complexity}
+
+Based on the preparation time of a q-sample detailed in the previous section, we derive an expected total complexity of $\mathcal{O}(k2^m/\sqrt{P_e})$ to generate a sample from the distribution $\mathbb{P}(\mathcal{Q}|\mathcal{E}=e)$.

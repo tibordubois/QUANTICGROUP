@@ -90,9 +90,9 @@
 <span class="kn">from</span> <span class="nn">qiskit_ibm_runtime.fake_provider</span> <span class="kn">import</span> <span class="n">FakeOsaka</span>
 
 
-<div class="viewcode-block" id="qBayesNet">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet">[docs]</a>
-<span class="k">class</span> <span class="nc">qBayesNet</span><span class="p">:</span>
+<div class="viewcode-block" id="qBNMC">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBNMC">[docs]</a>
+<span class="k">class</span> <span class="nc">qBNMC</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class used to build a Quantum Circuit representation of a Bayesian Network</span>
 <span class="sd">    Based on the paper:</span>
@@ -184,8 +184,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">bn</span> <span class="o">=</span> <span class="n">bn</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_qb_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapNodeToQBit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
 
-<div class="viewcode-block" id="qBayesNet.mapNodeToQBit">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.mapNodeToQBit">[docs]</a>
+<div class="viewcode-block" id="qBNMC.mapNodeToQBit">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBNMC.mapNodeToQBit">[docs]</a>
     <span class="k">def</span> <span class="nf">mapNodeToQBit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Maps variables IDs from Baysian Network to a list of qubits IDs</span>
@@ -210,8 +210,8 @@
         <span class="k">return</span> <span class="n">res</span></div>
 
 
-<div class="viewcode-block" id="qBayesNet.getWidth">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.getWidth">[docs]</a>
+<div class="viewcode-block" id="qBNMC.getWidth">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBNMC.getWidth">[docs]</a>
     <span class="k">def</span> <span class="nf">getWidth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Give the required number of qubits to represent a variable</span>
@@ -233,8 +233,8 @@
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">domain_size</span><span class="p">)))</span></div>
 
 
-<div class="viewcode-block" id="qBayesNet.getTotNumQBits">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.getTotNumQBits">[docs]</a>
+<div class="viewcode-block" id="qBNMC.getTotNumQBits">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBNMC.getTotNumQBits">[docs]</a>
     <span class="k">def</span> <span class="nf">getTotNumQBits</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span> <span class="c1">#not used</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Gives the total number of qubits required to build the quantum circuit</span>
@@ -250,8 +250,8 @@
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="qBayesNet.getBinarizedParameters">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.getBinarizedParameters">[docs]</a>
+<div class="viewcode-block" id="qBNMC.getBinarizedParameters">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBNMC.getBinarizedParameters">[docs]</a>
     <span class="k">def</span> <span class="nf">getBinarizedParameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">width_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="nb">int</span><span class="p">],</span>
                                      <span class="n">param_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="nb">int</span><span class="p">])</span> \
                                      <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
@@ -287,8 +287,8 @@
         <span class="k">return</span> <span class="n">bin_params_dict</span></div>
 
 
-<div class="viewcode-block" id="qBayesNet.getRootNodes">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.getRootNodes">[docs]</a>
+<div class="viewcode-block" id="qBNMC.getRootNodes">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBNMC.getRootNodes">[docs]</a>
     <span class="k">def</span> <span class="nf">getRootNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Gives the IDs of the root nodes (variables) in the DAG representation of</span>
@@ -304,8 +304,8 @@
         <span class="k">return</span> <span class="p">{</span><span class="nb">id</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="o">.</span><span class="n">parents</span><span class="p">(</span><span class="nb">id</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">}</span></div>
 
 
-<div class="viewcode-block" id="qBayesNet.getAllParentSates">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.getAllParentSates">[docs]</a>
+<div class="viewcode-block" id="qBNMC.getAllParentSates">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBNMC.getAllParentSates">[docs]</a>
     <span class="k">def</span> <span class="nf">getAllParentSates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> \
                                 <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="nb">int</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -321,7 +321,7 @@
 <span class="sd">        list[dict[Union[str, int]: int]]</span>
 <span class="sd">            List containting dicrionnaries with variable names as keys and their</span>
 <span class="sd">            corresponding state as values</span>
-<span class="sd">        </span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">res</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
@@ -340,8 +340,8 @@
         <span class="k">return</span> <span class="n">res</span></div>
 
 
-<div class="viewcode-block" id="qBayesNet.getQuantumRegisters">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.getQuantumRegisters">[docs]</a>
+<div class="viewcode-block" id="qBNMC.getQuantumRegisters">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBNMC.getQuantumRegisters">[docs]</a>
     <span class="k">def</span> <span class="nf">getQuantumRegisters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">:</span> <span class="n">QuantumRegister</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Gives the Quantum Registers used to represent the Bayesian Network as</span>
@@ -351,7 +351,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        dict[int: QuantumRegister]</span>
 <span class="sd">            Dictionary with variable IDs as keys and Quantum Registers as values</span>
-<span class="sd">       </span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">res</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
@@ -362,8 +362,8 @@
         <span class="k">return</span> <span class="n">res</span></div>
 
 
-<div class="viewcode-block" id="qBayesNet.indicatorFunction">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.indicatorFunction">[docs]</a>
+<div class="viewcode-block" id="qBNMC.indicatorFunction">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBNMC.indicatorFunction">[docs]</a>
     <span class="k">def</span> <span class="nf">indicatorFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binary_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
                                 <span class="n">targets</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
                                 <span class="n">verbose</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]:</span>
@@ -388,7 +388,7 @@
 <span class="sd">        list[bool]</span>
 <span class="sd">            List where True corresponds to a binary string (list of 0s and 1s)</span>
 <span class="sd">            satisfying the condition given by targets, and False otherwise</span>
-<span class="sd">        </span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -413,8 +413,8 @@
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="qBayesNet.getProbability">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.getProbability">[docs]</a>
+<div class="viewcode-block" id="qBNMC.getProbability">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBNMC.getProbability">[docs]</a>
     <span class="k">def</span> <span class="nf">getProbability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> 
                              <span class="n">node</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> 
                              <span class="n">qb_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> 
@@ -486,8 +486,8 @@
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">probability_list</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">I_qb</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="qBayesNet.multiQubitRotation">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.multiQubitRotation">[docs]</a>
+<div class="viewcode-block" id="qBNMC.multiQubitRotation">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBNMC.multiQubitRotation">[docs]</a>
     <span class="k">def</span> <span class="nf">multiQubitRotation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">circuit</span><span class="p">:</span> <span class="n">QuantumCircuit</span><span class="p">,</span> 
                                  <span class="n">node</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> 
                                  <span class="n">target_qbs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> 
@@ -591,8 +591,8 @@
         <span class="k">return</span></div>
 
 
-<div class="viewcode-block" id="qBayesNet.buildCircuit">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.buildCircuit">[docs]</a>
+<div class="viewcode-block" id="qBNMC.buildCircuit">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBNMC.buildCircuit">[docs]</a>
     <span class="k">def</span> <span class="nf">buildCircuit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">add_measure</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
                            <span class="n">verbose</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuantumCircuit</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -658,8 +658,8 @@
         <span class="k">return</span> <span class="n">circuit</span></div>
 
 
-<div class="viewcode-block" id="qBayesNet.aerSimulation">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.aerSimulation">[docs]</a>
+<div class="viewcode-block" id="qBNMC.aerSimulation">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBNMC.aerSimulation">[docs]</a>
     <span class="k">def</span> <span class="nf">aerSimulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">circuit</span><span class="p">:</span> <span class="n">QuantumCircuit</span><span class="p">,</span>
                           <span class="n">shots</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -706,8 +706,8 @@
         <span class="k">return</span> <span class="n">res</span></div>
 
 
-<div class="viewcode-block" id="qBayesNet.runBN">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.runBN">[docs]</a>
+<div class="viewcode-block" id="qBNMC.runBN">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBNMC.runBN">[docs]</a>
     <span class="k">def</span> <span class="nf">runBN</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shots</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="n">Potential</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Builds and runs the quantum circuit representation of a bayesian network</span>
@@ -737,8 +737,8 @@
         <span class="k">return</span> <span class="n">res</span></div>
 
 
-<div class="viewcode-block" id="qBayesNet.getRMSPE">
-<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBayesNet.getRMSPE">[docs]</a>
+<div class="viewcode-block" id="qBNMC.getRMSPE">
+<a class="viewcode-back" href="../../qBN.html#qBN.qBNMC.qBNMC.getRMSPE">[docs]</a>
     <span class="k">def</span> <span class="nf">getRMSPE</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">pass</span></div>
 </div>

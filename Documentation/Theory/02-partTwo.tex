@@ -1,0 +1,233 @@
+\section{Cahier des charges}
+
+\subsection{Environnement de programmation quantique}
+\label{MedProg}
+La programmation quantique, fondée sur l'informatique quantique, est le processus de conception et d’assemblage de circuits quantiques (c.f. \ref{IntroQuant}), qui, en manipulant un système de qubits, aboutiront à un certain résultat. Il existe de nombreux moyens de procéder à la programmation quantique, dans cette section, nous comparerons ces différents moyens afin d’aboutir à un environnement de programmation sur lequel se basera le reste du projet.
+\\
+Les environnements de programmation quantique peuvent être regroupées en trois principales catégories:
+
+\begin{itemize}
+\item Les \textit{jeux d'instructions quantiques} (Quantum Instruction Sets) permettent de traduire un algorithme de haut niveau en instructions physique qui pourront être exécutées sur des processeurs quantiques.
+\item Les \textit{langages de programmation quantique} sont des langages dédiés à écrire des programmes pour un ordinateur quantique.
+\item Les\textit{ kits de développement de logiciels quantiques} ou SDK (Quantum Software Development Kit) contiennent une collection d’outils de création et manipulation de programme quantiques dans un package installable.
+\end{itemize}
+
+\noindent Afin de nous concentrer sur le cœur du sujet, nous avons décidé de dévouer notre attention sur les SDK qui permettront une approche de haut niveau à la programmation quantique. En effet, la plupart de ces packages se basent sur le langage Python, omniprésent dans la communauté scientifique depuis les 30 dernières années. Plus récemment, de multiples géants de la technologie investissent dans l’informatique quantique et proposent leur propre SDK, nous travaillerons ici avec Qiskit, proposé par IBM. 
+\\
+
+\begin{table}
+\begin{tabular}{|M{3cm}||M{2.5cm}|M{2.5cm}|M{2.5cm}|M{2.5cm}|}
+    \hline
+    Critère & Qiskit (IBM) & Cirq (Google) & ProjectQ (ETHZ) & Forest (Rigetti) 
+    \\ \hline
+    Compilation sur ordinateur Quantique & 
+    \cmark & \xmark & \xmark & \xmark \\ \hline
+    Communauté & 
+    6.55M Downloads, Chaines Youtube, 543 Contributors, GitHub repo & 
+    Stack Exchange, QuantumLib repo & 
+    Github Repo, Documentation, Online Forums &
+    Github Repo, Documentation, Online Forums
+    \\ \hline
+    Bilbiothèques & 
+    Qiskit Terra, Aer, Ignis, Aqua, Finance & TensorFlow Quantum & \xmark & \xmark
+    \\ \hline
+    GUI & 
+    IBM Quantum Experience & Quirk & \xmark & \xmark 
+    \\ \hline
+\end{tabular}
+\caption{Comparaison entre les languages}\label{comp}
+\end{table}
+
+\noindent 
+Qiskit semble être un excellent choix pour la programmation quantique pour plusieurs raisons. Tout d'abord, il bénéficie du soutien robuste d'IBM, l'un des leaders de l'informatique quantique. Avec plus de 6,55 millions de téléchargements, une communauté dynamique, et une présence active sur des plateformes comme YouTube, il offre un écosystème riche pour l'apprentissage et l'échange entre utilisateurs. 
+De plus, Qiskit possède une riche bibliothèque qui comprend Terra pour la construction de circuits quantiques, Aer pour la simulation, Ignis pour l'atténuation des erreurs, Aqua pour les applications quantiques, et une multitude d’autres concernant le domaine de la finance par exemple. Cette gamme complète de fonctionnalités fait de Qiskit un outil versatile dans le domaine quantique. En comparaison, Google associe a son language une bibliothèque de machine learning quantique, Tensor Flow Quantum. Celle-ci permet le prototypage rapide de modèles d'apprentissage machine hybrides, cependant, cela ne rentre pas dans le cadre de notre recherche.
+\\
+La représentation graphique des circuits quantiques dans Qiskit est également un point fort, permettant aux utilisateurs de visualiser et de déboguer les circuits de manière intuitive. L'IBM Quantum Experience offre une plateforme accessible pour l'exécution de circuits sur des simulateurs et des ordinateurs quantiques réels. 
+Enfin, l'aspect open-source de Qiskit, avec son importante équipe de contributeurs de GitHub, assure une évolution constante et une amélioration continue du framework, le rendant à la pointe de la technologie quantique.
+
+\subsection{Introduction à pyAgrum}
+
+Tout d’abord, aGrUm est une librairie C++ créée en 2008 pour les modèles graphiques probabilistes, portant principalement sur la représentation des réseaux bayésiens, mais aussi d’autres modèles tels que les réseaux crédeaux, les modèles probabilistes relationnels, diagrammes d’influences ou encore les chaînes de Markov. C’est un choix intéressant pour sa performance apportée par le C++ et sa précision, le menant à être utilisé par des laboratoires de recherches comme LIP6, des startups et des géants industriels tels que EDF, Airbus et IBM.
+\\
+Ultérieurement, pyAgrum est un wrapper Python pour la libraire aGrUm, rendant cette librairie qui est de source C++ plus accessible grâce à l’intermédiaire de Python. Fournissant un environnement d’analyse et de modélisation probabiliste à l’utilisateur qui peut implémenter à travers des Notebook comme Jupyter Notebook. L’avantage de pyAgrum est qu’il combine la présence d'une interface graphique avec la maniabilité du code telle qu’on la connaît.
+
+\subsection{Cas d'usage}
+
+Plutôt que de fournir un cahier des charges détaillé, nous décrivons les cas d'usage de la librairie que nous devons créer durant ce projet.
+
+Avec pour objectif de mettre en œuvre l'inférence de Réseaux Bayésiens en utilisant des méthodes classiques et quantiques, nous avons conçu diverses classes pour gérer différents aspects des RB, notamment leur construction, leur modification et leur processus d'inférence.
+
+\subsection*{1. \texttt{qBNMC}}
+\begin{itemize}
+    \item \textbf{Initialisation} : 
+    \begin{minipage}{\linewidth}
+    \begin{lstlisting}
+    qbn = qBNMC(bn)
+    \end{lstlisting}
+    \end{minipage}
+    
+    % Ici, bn est un Réseau Bayésien créé et chargé en utilisant une bibliothèque telle que pyAgrum. Cette étape permet de transformer le modèle probabiliste classique en un modèle compatible avec l'inférence quantique.
+    
+    \item \textbf{Méthodes} :
+    \begin{itemize}
+        \item \texttt{getProbability} : Calcule la probabilité qu’un qubit prenne une valeur donnée, en tenant compte des autres qubits représentant la variable et d’autres nœuds du Réseau Bayésien.
+        \item \texttt{multiQubitRotation} : Ajoute au circuit quantique une série de rotations qui mappent les probabilités de la variable aux qubits correspondants, en fonction des états des qubits contrôleurs.
+        \item \texttt{buildCircuit} : Construit le circuit quantique à partir du Réseau Bayésien, en incluant les rotations et les connexions nécessaires entre les qubits.
+        \item \texttt{aerSimulation} : Exécute une simulation du circuit quantique du Réseau Bayésien en utilisant le simulateur Aer, et retourne les résultats de la mesure des qubits.
+        \item \texttt{runBN} : Construit et exécute le circuit quantique représentant le Réseau Bayésien, et retourne les potentiels associés à chaque variable du réseau.
+    \end{itemize}
+\end{itemize}
+
+\subsection*{2. \texttt{qBNRejection}}
+\begin{itemize}
+    \item \textbf{Initialisation} : 
+    \begin{minipage}{\linewidth}
+    \begin{lstlisting}
+    qinf = qBNRejection(qbn)
+    \end{lstlisting}
+    \end{minipage}
+    
+    % L'initialisation de cette classe nécessite une instance de qBayesNet représentant le Réseau Bayésien quantique.
+
+    \item \textbf{Méthodes} :
+    \begin{itemize}
+        \item \texttt{getGates} : Prépare les portes A et G pour l'échantillonnage par rejet.
+        \item \texttt{transpileGates} : Transpile les portes A et G pour optimiser le circuit quantique.
+        \item \texttt{getEvidenceQuBits} : Donne la représentation en qubits de l'évidence dans le Réseau Bayésien.
+        \item \texttt{getSample} : Génère un échantillon basé sur les évidences données.
+        \item \texttt{makeInference} : Exécute l'échantillonnage par rejet sur le circuit quantique représentant le Réseau Bayésien.
+        \item \texttt{setEvidence} : Définit les évidences pour l'inférence, en ajustant les états initiaux du circuit quantique en conséquence.
+        \item \texttt{posterior} : Donne la table de probabilité d'une variable basée sur les résultats de l'échantillonnage.
+        \item \texttt{useFragmentBN} : Utilise un fragment du Réseau Bayésien pour l'inférence, en se concentrant uniquement sur les variables ciblées. 
+
+    \end{itemize}
+\end{itemize}
+
+\subsection*{3. \texttt{qRuntime}}
+\begin{itemize}
+    \item \textbf{Initialisation} : 
+    \begin{minipage}{\linewidth}
+    \begin{lstlisting}
+    qrt = qRuntime(backend, qinf)
+    \end{lstlisting}
+    \end{minipage}
+    
+    % L'initialisation de cette classe nécessite un backend quantique (comme ceux fournis par IBM Quantum) et une instance de qInference. Cela permet de préparer le cadre pour l'évaluation comparative des performances.
+
+    \item \textbf{Méthodes} :
+    \begin{itemize}
+        \item \texttt{getAtime} : Estime le temps d'exécution théorique du circuit quantique pour une porte donnée sur un backend quantique.
+        \item \texttt{getGtime} : Estime le temps d'exécution théorique d'une itération de Grover sur un backend quantique.
+        \item \texttt{rejectionSamplingRuntime} : Utilise le temps d'exécution des portes pour calculer le temps total du processus d'échantillonnage par rejet.
+    \end{itemize}
+\end{itemize}
+
+
+
+\section*{Exemple de Flux de Travail}
+
+\subsection*{Étape 1 : Charger et Afficher le Réseau Bayésien}
+Charger un Réseau Bayésien en utilisant \texttt{pyAgrum} et le visualiser.
+\begin{verbatim}
+import pyAgrum as gum
+import pyAgrum.lib.notebook as gnb
+
+bn = gum.loadBN("path_to_your_bayesian_network.bif") 
+gnb.showBN(bn, size=20)
+\end{verbatim}
+
+% Ici, bn est le Réseau Bayésien chargé depuis un fichier. Remplacez "path_to_your_bayesian_network.bif" par le chemin de votre fichier RB.
+
+\subsection*{Étape 2 : Construire un Réseau Bayésien Quantique}
+Créer une instance de \texttt{qBayesNet} avec le Réseau Bayésien chargé.
+\begin{verbatim}
+qbn = qBayesNet(bn)
+\end{verbatim}
+
+% Cette étape crée un modèle quantique à partir du Réseau Bayésien classique.
+
+\subsection*{Étape 3 : Modifier et Générer une CPT}
+Générer une Table de Probabilités Conditionnelles (CPT) aléatoire pour les nœuds du Réseau Bayésien.
+\begin{verbatim}
+def getRandomBinaryCPT(num_parents):
+    # Code pour générer une CPT aléatoire
+    pass
+
+# Exemple d'utilisation
+for n_id in bn.nodes():
+    bn.cpt(n_id)[:] = getRandomBinaryCPT(len(bn.parents(n_id)))
+\end{verbatim}
+
+% Cette fonction génère des CPTs aléatoires pour les nœuds du RB, où num_parents représente le nombre de parents d'un nœud.
+
+\subsection*{Étape 4 : Effectuer l'Inférence Quantique}
+Initialiser la classe \texttt{qInference} et exécuter l'inférence.
+\begin{verbatim}
+qinf = qInference(qbn)
+qinf.runInference(backend)
+\end{verbatim}
+
+% backend représente le backend quantique utilisé pour l'inférence (par exemple, un backend d'IBM Quantum).
+
+\subsection*{Étape 5 : Évaluer le Temps d'Exécution}
+Utiliser \texttt{qRuntime} pour évaluer et comparer les temps d'exécution.
+\begin{verbatim}
+qrt = qRuntime(backend, qinf)
+qrt.run()
+\end{verbatim}
+
+% qRuntime permet de mesurer et comparer les temps d'exécution des inférences classiques et quantiques.
+
+\subsection*{Étape 6 : Visualiser les Résultats}
+Générer des graphiques pour comparer la performance des inférences Monte Carlo (MC) et Quantique (QI).
+\begin{verbatim}
+import matplotlib.pyplot as plt
+
+# ev_prob_list : Liste des probabilités d'évidence.
+# mc_rt_list : Liste des temps d'exécution pour Monte Carlo.
+# qinf_rt_list : Liste des temps d'exécution pour l'inférence quantique.
+
+# Exemple de Code pour tracer les graphiques
+# Affiche les temps d'exécution pour Monte Carlo
+plt.scatter(ev_prob_list, mc_rt_list, color="tab:orange", label="Temps d'exécution MC") 
+# Affiche les temps d'exécution pour l'inférence quantique
+plt.scatter(ev_prob_list, qinf_rt_list, color="tab:blue", label="Temps d'exécution QI") 
+# Utilise une échelle logarithmique pour l'axe Y
+plt.yscale('log')  
+plt.xlabel('Probabilité d\'évidence')  
+plt.ylabel('Temps d\'exécution')  
+plt.legend()  
+plt.show() 
+\end{verbatim}
+
+% ev_prob_list représente la liste des probabilités d'évidence, mc_rt_list les temps d'exécution pour Monte Carlo et qinf_rt_list les temps d'exécution pour l'inférence quantique.
+
+
+
+
+
+
+\iffalse
+\begin{lstlisting}
+import pyAgrum as gum
+import pyAgrum.lib.quantik as gqt
+
+# From BN to QC
+bn=gum.fastBN('A->B{yes|no}->C',5)
+
+#for v in bn.names():
+#  print(bn[v])
+#  print(bn[v].domainSize())
+#  print(bn.cpt(v))
+
+qbn=qgt.qBN(bn)
+print(qbn.qbytes())
+circuit=qbn.toqiskit()
+
+qie = qgt.qRejectSampling(bn)
+qie.addEvidence("C",3)
+qie.setEpsilon(1e-5)
+qie.setTimeout(5)
+cinference=qie.toqiskit() 
+\end{lstlisting}
+\fi

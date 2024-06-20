@@ -1,26 +1,18 @@
 #parameters
 
-scaling_min = 4
-scaling_max = 5.5
+scaling_min = 4.5
+scaling_max = 5.2
 num_runs = 100
 num_evidence_var = 3
-max_iter = 1000
-
-qinf_rt_list = list()
-qinf_me_list = list()
-
-mc_rt_list = list()
-mc_me_list = list()
-
-ev_prob_list = list()
+max_iter = 100
 
 #imports
 
 import sys
 if sys.path[-1] != "..": sys.path.append("..")
 
-from qBN.qBNMC import qBayesNet
-from qBN.qBNRejection import qInference
+from source.qBN.qBNMC import qBayesNet
+from source.qBN.qBNRejection import qInference
 from XPs.qBNRT import qRuntime
 
 import pyAgrum as gum
@@ -40,7 +32,7 @@ service = QiskitRuntimeService(
 )
 
 backend = service.backend("ibm_brisbane")
-print("+ backend : OK")
+print("\n+ Loading Backend")
 
 #functions
 
@@ -88,71 +80,81 @@ print("+ Building circuit")
 qc = qbn.buildCircuit(add_measure=True)
 
 #ploting
-print("ploting ",end="")
-for i in range(num_runs):
-    if i % 10 == 0:
-      print(".",end="")
-    #Randomly Chosen Evidence and Target
-    n_ids = asia_bn.nodes()
-    evidence = {ev_id: random.randint(0,1) for ev_id in randomChoice(n_ids, num_evidence_var)}
-    target = list(randomChoice(n_ids, 1))[0]
 
-    #modifying the probabilities
-    scaling = random.random()*(scaling_max - scaling_min) + scaling_min
-    for n_id, n_state in evidence.items():
-        asia_bn.cpt(n_id)[:] = modifyBinaryCPT(asia_bn.cpt(n_id), n_state, scaling)
-    old_target_cpt = asia_bn.cpt(target).tolist()
-    asia_bn.cpt(target).translate(1e-5).normalizeAsCPT()
+print("\n-------Ploting-------\n\n",end="")
 
-    #Lazy Propagation Benchmark
-    ie = gum.LazyPropagation(asia_bn)
-    ie.setEvidence(evidence)
-    ie.makeInference()
-    print(f"Evidence: {evidence}, Target Node: {target}")
-    print(f"Evidence probability: {ie.evidenceProbability()}")
-    ev_prob_list.append(ie.evidenceProbability())
-
-
-    #Monte Carlo Classical Rejection Sampling
-    mc = gum.MonteCarloSampling(asia_bn)
-    mc.setEpsilon(1e-20)
-    mc.setMaxTime(1e20)
-    mc.setEvidence(evidence)
-    mc.setMaxIter(max_iter)
-    mc.makeInference()
-    mc_run_time = mc.currentTime()
-    mc_max_error = (mc.posterior(target).toarray() - ie.posterior(target).toarray()).max()
-    print(f"\tMC - Run time: {mc_run_time}, Max Error: {mc_max_error}")
-    mc_rt_list.append(mc_run_time)
-    mc_me_list.append(mc_max_error)
-
-    #Quantum Rejection Sampling
-    qinf = qInference(qbn)
-    qrt = qRuntime(qinf, backend)
-    qinf.setEvidence(evidence)
-    qinf.setMaxIter(max_iter)
-    qinf.makeInference(verbose=0)
-    qinf_run_time = qrt.rejectionSamplingRuntime()
-    qinf_max_error = (qinf.posterior(target).toarray() - ie.posterior(target).toarray()).max()
-    print(f"\tQS - Run time: {qinf_run_time}, Max Error: {qinf_max_error}")
-    qinf_rt_list.append(qinf_run_time)
-    qinf_me_list.append(qinf_max_error)
-
-    #resetting the probabilities
-    for n_id, n_state in evidence.items():
-        asia_bn.cpt(n_id)[:] = modifyBinaryCPT(asia_bn.cpt(n_id), n_state, 1/scaling)
-    asia_bn.cpt(target)[:] = old_target_cpt
-
-#saving the output
 with open("asia_output.txt", "w") as output:
-    output.write(f"scaling: {scaling}, num_runs: {num_runs}, num_evidence_var: {num_evidence_var}, max_iter: {max_iter}\n")
-    output.write("ev_prob_list: \n")
-    output.write(str(ev_prob_list)+"\n")
-    output.write("qinf_rt_list: \n")
-    output.write(str(qinf_rt_list)+"\n")
-    output.write("mc_rt_list: \n")
-    output.write(str(mc_rt_list)+"\n")
-    output.write("qinf_me_list: \n")
-    output.write(str(qinf_me_list)+"\n")
-    output.write("mc_me_list: \n")
-    output.write(str(mc_me_list))
+
+    output.write("ev_prob_list:\n")
+    output.write(f"scaling_min: {scaling_min}\nscaling_max: {scaling_max}\nnum_runs: {num_runs}\nnum_evidence_var: {num_evidence_var}\n max_iter: {max_iter}\n")
+    output.write("ev_prob_list mc_rt_list mc_me_list qinf_rt_list qinf_me_list\n")
+    output.flush()
+
+    for i in range(num_runs):
+
+        #Randomly Chosen Evidence and Target
+        n_ids = asia_bn.nodes()
+        evidence = {ev_id: random.randint(0,1) for ev_id in randomChoice(n_ids, num_evidence_var)}
+        target = list(randomChoice(n_ids, 1))[0]
+
+        #modifying the probabilities
+        scaling = random.random()*(scaling_max - scaling_min) + scaling_min
+        old_evidence_cpts = dict()
+
+        for n_id, n_state in evidence.items():
+            print(asia_bn.cpt(n_id))
+            old_evidence_cpts[n_id] =  asia_bn.cpt(n_id).tolist()
+            asia_bn.cpt(n_id)[:] = modifyBinaryCPT(asia_bn.cpt(n_id), n_state, scaling)
+            asia_bn.cpt(n_id).translate(1e-4).normalizeAsCPT()
+
+        #Lazy Propagation Benchmark
+
+        ie = gum.LazyPropagation(asia_bn)
+        ie.setEvidence(evidence)
+        ie.makeInference()
+
+        print(f"Evidence: {evidence}, Target Node: {target}")
+        print(f"Evidence probability: {ie.evidenceProbability()}")
+
+        output.write(f"{ie.evidenceProbability()} ")
+        output.flush()
+
+        #Monte Carlo Classical Rejection Sampling
+
+        mc = gum.MonteCarloSampling(asia_bn)
+        mc.setEpsilon(1e-20)
+        mc.setMaxTime(1e20)
+        mc.setEvidence(evidence)
+        mc.setMaxIter(max_iter)
+        mc.makeInference()
+
+        mc_run_time = mc.currentTime()
+        mc_max_error = (mc.posterior(target).toarray() - ie.posterior(target).toarray()).max()
+
+        print(f"\tMC - Run time: {mc_run_time}, Max Error: {mc_max_error}")
+
+        output.write(f"{mc_run_time} {mc_max_error} ")
+        output.flush()
+
+        #Quantum Rejection Sampling
+
+        qinf = qInference(qbn)
+        qinf.setEvidence(evidence)
+        qinf.setMaxIter(max_iter)
+        qinf.makeInference(verbose=0)
+        qrt = qRuntime(qinf, backend)
+
+        qinf_run_time = qrt.rejectionSamplingRuntime()
+        qinf_max_error = (qinf.posterior(target).toarray() - ie.posterior(target).toarray()).max()
+
+        print(f"\tQS - Run time: {qinf_run_time}, Max Error: {qinf_max_error}\n")
+
+        output.write(f"{qinf_run_time} {qinf_max_error}\n")
+        output.flush()
+
+        #resetting the probabilities
+
+        for n_id, cpt in old_evidence_cpts.items():
+            asia_bn.cpt(n_id)[:] = cpt
+
+

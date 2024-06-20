@@ -1,39 +1,24 @@
-\clearpage
 \section{Annexe}
-\begin{figure}[ht!]
-    \centering
-        \begin{subfigure}[b]{0.40\textwidth}
-            \includegraphics[width=\textwidth]{Grover-EtatInitial.jpg}
-            \caption{\footnotesize État initial $|\psi_{(0)}\rangle$}
-            \label{fig2:first}
-        \end{subfigure}
-        \hspace{1cm}
-        \begin{subfigure}[b]{0.40\textwidth}
-            \includegraphics[width=\textwidth]{Grover-PassageParBoiteNoire.jpg}
-            \caption{\footnotesize Passage par l'oracle $U_{\omega}$}
-            \label{fig2:second}
-        \end{subfigure}
-        \\
-        \begin{subfigure}[b]{0.40\textwidth}
-            \includegraphics[width=\textwidth]{Grover-MiroirMoyenne.jpg}
-            \caption{\footnotesize Passage par l'opérateur de diffusion $U_{\psi}$}\footnotemark
-            \label{fig2:third}
-        \end{subfigure}
-        \hspace{1cm}
-        \begin{subfigure}[b]{0.40\textwidth}
-            \includegraphics[width=\textwidth]{Grover-Amplification.jpg}
-            \caption{\footnotesize État $|\psi_{(1)}\rangle$ résultant après une première iteration}
-            \label{fig2:fourth}
-        \end{subfigure}
-        \\
-        \begin{subfigure}[b]{0.40\textwidth}
-            \includegraphics[width=\textwidth]{Grover-EtatFinal.jpg}
-            \caption{\footnotesize État final $|\psi_{(r)}\rangle$ maximisant l'amplitude de $|\omega\rangle$ pour $\omega=6$}
-            \label{fig2:fifth}
-        \end{subfigure}
+\label{annexe}
 
-    \caption{\small Algorithme de Grover pour $\omega=6 \in [\![1,8]\!]$; évolution des amplitudes des vecteurs d'état.}
-    \label{fig2:subfigures}
-\end{figure}
+Nous expliquerons dans cette section comment construire un circuit quantique pour représenter un réseau bayésien. Le procédé consiste de trois étapes: (\cite{quant_rep_BN})
+\begin{itemize}
+    \item On associe chaque noeud d'un réseau bayésien à un ou plusieurs qubits. (en fonction du nombre d'états du noeud)
+    \item On associe les probabilités marginales/conditionnelles de chaque noeud aux amplitudes de probabilités associées aux états du qubit. 
+    \item On accorde les amplitudes de probabilité requises des états quantiques à l'aide de portes de rotation. 
+\end{itemize}
 
-\footnotetext{La droite rouge correspond à l'amplitude de  $U_{\omega}|\psi_{(0)}\rangle$, et l'histogramme bleu correspond aux amplitudes de chacune de ses composantes. On retrouve les amplitudes des composantes de $|\psi_{(1)}\rangle = U_{\psi}U_{\omega}|\psi_{(0)}\rangle$ avec l'histogramme vert, en remarquant qu'il s'agit d'une symétrie de l'histogramme bleu par rapport à la droite rouge.}
+% A revoir
+
+\noindent Pour calculer l'angle de rotation \(\theta_{V_i}\) passé en argument de \(\mathrm{R_Y}\) qui accorde les probabilités respectives de \(|0\rangle\) et \(|1\rangle\) à une racine \(V_i\) du graphe, on fait recours à la formule suivante:
+
+\begin{equation}
+    \theta_{V_i} = 2 \times arctan(\sqrt{\frac{P(V_i=1)}{P(V_i=0)}})
+\end{equation}
+
+\noindent Pour un noeud enfant \(V_i\) ayant un ensemble de parent \(Pa(V_i)\) prenant les valeurs \(\Pi_{V_i}\), l'angle de rotation \(\theta_{V_i, \Pi_{V_i}}\) correspondante se calcul ainsi:
+
+\begin{equation}
+    \theta_{V_i, \Pi_{V_i}} = 2 \times arctan(\sqrt{\frac{P(V_i=1|Pa(V_i)=\Pi_{V_i})}{P(V_i=0|Pa(V_i)=\Pi_{V_i})}})
+\end{equation}
+

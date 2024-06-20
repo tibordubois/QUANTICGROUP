@@ -1,4 +1,4 @@
-from .qBNMC import qBayesNet #relative import
+from .qBNMC import qBNMC #relative import
 
 import numpy as np
 
@@ -12,7 +12,7 @@ import scipy.linalg #for qiskit transpile function
 
 from pyAgrum import Potential, BayesNetFragment
 
-class qInference:
+class qBNRejection:
     """
     Class used to perform inference via rejection sampling from a Quantum Circuit
     representation of a Bayesian Network
@@ -21,7 +21,7 @@ class qInference:
 
     Attributes
     ----------
-    qbn: qBayesNet
+    qbn: qBNMC
         Quantum Baysien Network object
     q_registers: dict[int: QuantumRegister]
         Quantum Registers used to build the rotation gates
@@ -33,13 +33,13 @@ class qInference:
         the Baysian Network
     """
 
-    def __init__(self, qbn: qBayesNet) -> None:
+    def __init__(self, qbn: qBNMC) -> None:
         """
         Initialises the qInference Object 
 
         Parameters
         ----------
-        qbn : qBayesNet
+        qbn : qBNMC
             Quantum Bayesian Network
 
         """
@@ -455,6 +455,6 @@ class qInference:
         for node in target.union(evidence):
             fbn.installAscendants(node)
 
-        self.qbn = qBayesNet(fbn.toBN())
+        self.qbn = qBNMC(fbn.toBN())
         self.q_registers = self.qbn.getQuantumRegisters()
         self.all_qbits = np.hstack(list(self.qbn.n_qb_map.values())).tolist()

@@ -8,18 +8,18 @@ The `qBN` package is designed for representing and performing inference on Bayes
 
 The package consists of two main classes:
 
-1. **qInference**: This class performs inference via rejection sampling from a Quantum Circuit representation of a Bayesian Network.
-2. **qBayesNet**: This class constructs a Quantum Circuit representation of a Bayesian Network.
+1. **qBNRejection**: This class performs inference via rejection sampling from a Quantum Circuit representation of a Bayesian Network.
+2. **qBNMC**: This class constructs a Quantum Circuit representation of a Bayesian Network.
 
 ## Implementation
 
-### qBayesNet
+### qBNMC
 
-The `qBayesNet` class is responsible for building the quantum circuit that represents the Bayesian Network. This involves mapping the variables and their states in the Bayesian Network to qubits and their corresponding quantum states. The quantum circuit is constructed in a way that reflects the probabilistic relationships encoded in the Bayesian Network.
+The `qBNMC` class is responsible for building the quantum circuit that represents the Bayesian Network. This involves mapping the variables and their states in the Bayesian Network to qubits and their corresponding quantum states. The quantum circuit is constructed in a way that reflects the probabilistic relationships encoded in the Bayesian Network.
 
-### qInference
+### qBNRejection
 
-The `qInference` class utilizes the quantum circuit constructed by `qBayesNet` to perform inference. This is done using a process called rejection sampling, where samples are generated from the quantum circuit and then used to compute the probabilities of different states in the Bayesian Network given some evidence.
+The `qBNRejection` class utilizes the quantum circuit constructed by `qBNMC` to perform inference. This is done using a process called rejection sampling, where samples are generated from the quantum circuit and then used to compute the probabilities of different states in the Bayesian Network given some evidence.
 
 ### Research Basis
 
@@ -42,7 +42,7 @@ To use the `qBN` package, follow these steps:
 
    ```python
    from pyAgrum import BayesNet
-   from qBN.qBNMC import qBayesNet, qInference
+   from qBN.qBNMC import qBNMC, qBNRejection
 
    # Create a Bayesian Network
    bn = BayesNet()
@@ -53,20 +53,20 @@ To use the `qBN` package, follow these steps:
    bn.addArc('A', 'B')
 
    # Create a Quantum Bayesian Network
-   qbn = qBayesNet(bn)
+   qbn = qBNMC(bn)
    ```
 
 3. **Perform inference using the quantum circuit**:
 
    ```python
    # Create a Quantum Inference object
-   qinference = qInference(qbn)
+   qBNRejection = qBNRejection(qbn)
 
    # Set evidence for the inference
-   qinference.setEvidence({'A': 1})
+   qBNRejection.setEvidence({'A': 1})
 
    # Perform inference
-   results = qinference.makeInference()
+   results = qBNRejection.makeInference()
 
    # Print the results
    print(results)

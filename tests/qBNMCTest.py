@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, os.path.abspath('../'))
 from unittest.mock import patch, MagicMock
 from pyAgrum import DiscreteVariable, Instantiation, BayesNet, LabelizedVariable, Potential
-from qBN.qBNMC import qBayesNet
+from qBN.qBNMC import qBNMC
 from qiskit import QuantumRegister, QuantumCircuit
 from qiskit.circuit.library import RYGate, XGate
 import numpy as np
@@ -33,7 +33,7 @@ class TestQBayesNet(unittest.TestCase):
             2: self.mock_variable2
         }[n_id]
 
-        self.qb_net = qBayesNet(self.mock_bn)
+        self.qb_net = qBNMC(self.mock_bn)
         self.qb_net.n_qb_map = {0: [0, 1], 1: [2, 3], 2: [4, 5]}
 
     def test_initialization(self):
@@ -43,13 +43,13 @@ class TestQBayesNet(unittest.TestCase):
             1: [2, 3],
             2: [4, 5]
         }
-        with patch.object(qBayesNet, 'getWidth', side_effect=[2, 2, 2]):
-            self.qb_net = qBayesNet(self.mock_bn)
+        with patch.object(qBNMC, 'getWidth', side_effect=[2, 2, 2]):
+            self.qb_net = qBNMC(self.mock_bn)
             self.assertEqual(self.qb_net.n_qb_map, expected_map)
 
     def test_mapNodeToQBit(self):
         nodes = {0, 1, 2}
-        with patch.object(qBayesNet, 'getWidth', side_effect=[2, 2, 2]):
+        with patch.object(qBNMC, 'getWidth', side_effect=[2, 2, 2]):
             qb_map = self.qb_net.mapNodeToQBit(nodes)
         
         expected_map = {
@@ -150,8 +150,8 @@ class TestQBayesNet(unittest.TestCase):
         result = self.qb_net.indicatorFunction(binary_list, targets)
         self.assertEqual(result, expected_result)
 
-    @patch.object(qBayesNet, 'getWidth', return_value=2)
-    @patch.object(qBayesNet, 'indicatorFunction', return_value=[True, False, True, False])
+    @patch.object(qBNMC, 'getWidth', return_value=2)
+    @patch.object(qBNMC, 'indicatorFunction', return_value=[True, False, True, False])
     def test_getProbability(self, mock_indicatorFunction, mock_getWidth):
         # Mock the CPT (Conditional Probability Table) as a nested dictionary
         mock_cpt = MagicMock()

@@ -1,30 +1,71 @@
-\documentclass{article}
-\usepackage{graphicx} % Required for inserting images
-\usepackage{amsfonts, amsmath, bbm, mathrsfs, subcaption, adjustbox}
-\usepackage[backend=biber]{biblatex}
+% Official PHreport LaTeX Template
+% Written by Karl Welzel
+% Last updated on 21 January 2024
+% modified by PH
+% This document is published under a CC0 1.0 Universal License
+% To view a copy of this license, visit http://creativecommons.org/publicdomain/zero/1.0
 
-\addbibresource{references.bib}
+\documentclass[area=computerscience, review]{PHreportarticle}
 
-\author{Thierry Rioual}
-\date{}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{pifont}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{algorithm}
+\usepackage[braket, qm]{qcircuit}
+\usepackage{adjustbox}
+
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+
+\PHreportinfo{
+    title={Inférence Quantique dans les Modèles Graphiques},
+    shorttitle={Inférence Quantique},
+    author={Thierry Rioual and Tibor Dubois and Mehmet Gunes},
+    shortauthor={T. Rioual and T. Dubois and M. S. Gunes},
+    authorline={Rioual Thierry \textsuperscript{1}, Dubois Tibor\textsuperscript{2}, Gunes Mehmet\textsuperscript{3}},
+    affiliation={
+        \item LIP6, Paris (\email{author@upmc.fr})
+        \item Math Info (\email{author@gmail.com})
+    },
+    actor={Pierre-Henri WUILLEMIN},
+    function={Encadré par},
+    typeofdocument={Rapport de projet},
+    publisheddate={2024/03/276},
+}
+
+\PHreportheaders{}
+
+\setcounter{page}{1}
+
+\addbibresource{quanticBiblio.bib}
 
 \begin{document}
 
-\begin{adjustbox}{minipage=1.2\textwidth, center}
-\begin{center}
-\textsc{\Large Quantum Inference in Bayesian Networks}
-\\[5pt]
-\textsc{\large Report}  
-\end{center}
-\end{adjustbox}
+\maketitle
 
-\input{part1.tex}
-\input{part2.tex}
-\input{part3.tex}
-\input{part4.tex}
-\input{part5.tex}
+\begin{PHreportabstractandkeywords}%
+    \begin{PHreportkeywords}%
+        One,
+        Two,
+        Three,
+        Four,
+        Five,
+        Six,
+        Seven.
+    \end{PHreportkeywords}
+\end{PHreportabstractandkeywords}
 
-\input{annexe.tex}
+\input{00-intro}
+\input{01-partOne}
+\input{02-partTwo}
+\input{03-partThree}
+\input{04-partFour}
+\input{99-conclusion}
 
 \printbibliography
 

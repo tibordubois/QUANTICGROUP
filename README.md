@@ -1,15 +1,70 @@
-# qBN README
+# qBN - README
+
+### General Information
+
+**Authors:**
+
+- Thierry Rioual
+- Tibor Dubois
+- Mehmet Gunes
+
+**Encadré par:** Pierre-Henri WUILLEMIN
+
+**Type de document:** README
+
+**Date de publication:** 2024/06/21
 
 ## Overview
 
 The `qBN` package is designed for representing and performing inference on Bayesian Networks using Quantum Circuits. It leverages the principles of quantum information theory to implement quantum versions of classical probabilistic reasoning algorithms, enabling potentially significant speedups for certain types of computations.
 
-### Structure
+## Structure
 
 The package consists of two main classes:
 
 1. **qBNRejection**: This class performs inference via rejection sampling from a Quantum Circuit representation of a Bayesian Network.
+
 2. **qBNMC**: This class constructs a Quantum Circuit representation of a Bayesian Network.
+
+The repository is organized as follows:
+
+```bash
+.
+├── Documentation
+│   ├── ReadTheDocs
+│   └── Theory
+├── qBN
+│   ├── __init__.py
+│   ├── __pycache__
+│   ├── qBNMC.py
+│   └── qBNRejection.py
+├── README.md
+├── runTest.py
+├── tests
+│   ├── __init__.py
+│   ├── __pycache__
+│   ├── qBNMCTest.py
+│   └── qBNRejectionTest.py
+├── tree.txt
+├── tutorials
+│   ├── alarm.dsl
+│   ├── alarm.ipynb
+│   ├── asia.bif
+│   ├── asia.ipynb
+│   ├── bayes_nets
+│   ├── borujeni.ipynb
+│   ├── comparison.ipynb
+│   └── tutorial.ipynb
+└── XPs
+    ├── alarm.dsl
+    ├── asia.bif
+    ├── asia_plot.py
+    ├── comparaison.ipynb
+    ├── __init__.py
+    ├── plots
+    ├── __pycache__
+    └── qBNRT.py
+```
 
 ## Implementation
 
@@ -34,47 +89,74 @@ To use the `qBN` package, follow these steps:
 
 1. **Install the required dependencies**:
 
-   ```bash
-   pip install numpy qiskit scipy pyAgrum qiskit-aer qiskit-ibm-runtime
-   ```
+```bash
+   pip install qiskit pyAgrum
+```
 
-2. **Create and initialize a Bayesian Network**:
+2. **Steps to Follow**
 
-   ```python
-   from pyAgrum import BayesNet
-   from qBN.qBNMC import qBNMC, qBNRejection
+```python
+# Step 1 : Import the Necessary Libraries
+from qBN.qBNMC import qBNMC
+from qBN.qBNRejection import qBNRejection
+from XPs.qBNRT import qRuntime
+import pyAgrum as gum
+import pyAgrum.lib.notebook as gnb
+import matplotlib.pyplot as plt
+from qiskit_ibm_runtime import QiskitRuntimeService
 
-   # Create a Bayesian Network
-   bn = BayesNet()
+# Step 2 : Initialise the Qiskit Service
+service = QiskitRuntimeService(
+   'ibm_quantum',
+   'ibm-q/open/main',
+   'YOUR_IBM_QUANTUM_API_TOKEN'
+)
+backend = service.get_backend("ibm_brisbane")
 
-   # Add nodes and edges to the Bayesian Network
-   bn.add('A', 2)
-   bn.add('B', 2)
-   bn.addArc('A', 'B')
 
-   # Create a Quantum Bayesian Network
-   qbn = qBNMC(bn)
-   ```
+# Step 3 : Charge and visualise the Bayesian Network
+bn = gum.loadBN("PATH_TO_BN.bif")
+#bn : pyAgrum.BayesNet
+gnb.showBN(bn, size=20)
 
-3. **Perform inference using the quantum circuit**:
+# Step 4 : Build the Quantum Circuit
+qbn = qBNMC(bn)
+#bn : pyAgrum.BayesNet
+qc = qbn.buildCircuit(add_measure=True)
 
-   ```python
-   # Create a Quantum Inference object
-   qBNRejection = qBNRejection(qbn)
+# Step 5 : Execution of the Rejection Sampling Method on the Quantum Circuit
+qinf = qBNRejection(qbn)
+qrt = qRuntime(qinf, backend)
+# Define the proof
+evidence: Dict[str, int] = {'A': 1, 'B': 0}
+# Define the max number of iterations
+max_iter: int = 1000
+qinf.setEvidence(evidence)
+qinf.setMaxIter(max_iter)
+qinf.makeInference(verbose=1)
 
-   # Set evidence for the inference
-   qBNRejection.setEvidence({'A': 1})
+# Step 6 : Calculate the time of execution and store these values
+qinf_run_time = qrt.rejectionSamplingRuntime()
+qinf_max_error=(qinf.posterior(target).toarray()-ie.posterior(target).toarray()).max()
 
-   # Perform inference
-   results = qBNRejection.makeInference()
+print(f"QS - Run time: {qinf_run_time}, Max Error: {qinf_max_error}")
+qinf_rt_list.append(qinf_run_time)
+qinf_me_list.append(qinf_max_error)
 
-   # Print the results
-   print(results)
-   ```
+# Step 7 : Visualise the data
+# Scatter plot of the quantum inference data we obtained
+plt.scatter(ev_prob_list, qinf_rt_list, color="tab:blue", label="QI Execution Time")
+# Use a logarithmic measure for axis Y
+plt.yscale('log')
+plt.xlabel('Probability of the Evidence')
+plt.ylabel('Execution Time')
+plt.legend()
+plt.show()
+```
 
 ## Testing
 
-In the main directory, the folder `tutorials` has a Jupyter-Notebook that illustrates an exhaustive example of using all the functions from the package on the ASIA Bayesian Network, which is a standard test network provided by the pyAgrum library.
+In the main directory, the folder `tutorials` has a Jupyter-Notebook : `asia.ipynb`, that illustrates an exhaustive example of using all the functions from the package on the ASIA Bayesian Network. This Bayesian Network is a standard test network provided by the pyAgrum library.
 
 ### Running the Tests
 

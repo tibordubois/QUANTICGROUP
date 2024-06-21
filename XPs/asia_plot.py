@@ -11,8 +11,8 @@ max_iter = 1
 import sys
 if sys.path[-1] != "..": sys.path.append("..")
 
-from source.qBN.qBNMC import qBayesNet
-from source.qBN.qBNRejection import qInference
+from qBN.qBNMC import qBNMC
+from qBN.qBNRejection import qBNRejection
 from XPs.qBNRT import qRuntime
 
 import pyAgrum as gum
@@ -74,7 +74,7 @@ print("+ Loading ASIA")
 asia_bn = gum.loadBN("asia.bif")
 
 print("+ Building qBayesNet")
-qbn = qBayesNet(asia_bn)
+qbn = qBNMC(asia_bn)
 
 print("+ Building circuit")
 qc = qbn.buildCircuit(add_measure=True)
@@ -137,7 +137,7 @@ with open("asia_output.txt", "w") as output:
 
         #Quantum Rejection Sampling
 
-        qinf = qInference(qbn)
+        qinf = qBNRejection(qbn)
         qinf.setEvidence(evidence)
         qinf.setMaxIter(max_iter)
         qinf.makeInference(verbose=0)

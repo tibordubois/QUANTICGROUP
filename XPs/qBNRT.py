@@ -150,7 +150,7 @@ class qRuntime:
         self.qinf.addA(A)
 
         circuit = QuantumCircuit(*list(self.qinf.q_registers.values()))
-        self.qinf.addG(circuit, A, evidence_qbs, inplace=False)
+        self.qinf.addG(circuit, A, evidence_qbs)
 
         transpiled_circuit = transpile(circuit, backend=backend)
 

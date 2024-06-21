@@ -2,9 +2,11 @@
 
 scaling_min = 1.5
 scaling_max = 2.2
-num_runs = 10
+num_runs = 100
 num_evidence_var = 3
-max_iter = 1
+max_iter = 1000
+
+proba_ceil = 1e-3
 
 #imports
 
@@ -90,30 +92,36 @@ with open("asia_output.txt", "w") as output:
     output.flush()
 
     for i in range(num_runs):
+        
+        evidence_proba = 0
 
-        #Randomly Chosen Evidence and Target
-        n_ids = asia_bn.nodes()
-        evidence = {ev_id: random.randint(0,1) for ev_id in randomChoice(n_ids, num_evidence_var)}
-        target = list(randomChoice(n_ids, 1))[0]
+        while evidence_proba < proba_ceil:
 
-        #modifying the probabilities
-        scaling = random.random()*(scaling_max - scaling_min) + scaling_min
-        old_evidence_cpts = dict()
+            #Randomly Chosen Evidence and Target
+            n_ids = asia_bn.nodes()
+            evidence = {ev_id: random.randint(0,1) for ev_id in randomChoice(n_ids, num_evidence_var)}
+            target = list(randomChoice(n_ids, 1))[0]
 
-        for n_id, n_state in evidence.items():
-            #print(asia_bn.cpt(n_id))
-            old_evidence_cpts[n_id] =  asia_bn.cpt(n_id).tolist()
-            asia_bn.cpt(n_id)[:] = modifyBinaryCPT(asia_bn.cpt(n_id), n_state, scaling)
-            asia_bn.cpt(n_id).translate(1e-4).normalizeAsCPT()
+            #modifying the probabilities
+            scaling = random.random()*(scaling_max - scaling_min) + scaling_min
+            old_evidence_cpts = dict()
 
-        #Lazy Propagation Benchmark
+            for n_id, n_state in evidence.items():
+                #print(asia_bn.cpt(n_id))
+                old_evidence_cpts[n_id] =  asia_bn.cpt(n_id).tolist()
+                asia_bn.cpt(n_id)[:] = modifyBinaryCPT(asia_bn.cpt(n_id), n_state, scaling)
+                asia_bn.cpt(n_id).translate(1e-4).normalizeAsCPT()
 
-        ie = gum.LazyPropagation(asia_bn)
-        ie.setEvidence(evidence)
-        ie.makeInference()
+            #Lazy Propagation Benchmark
+
+            ie = gum.LazyPropagation(asia_bn)
+            ie.setEvidence(evidence)
+            ie.makeInference()
+
+            evidence_proba = ie.evidenceProbability()
 
         print(f"Evidence: {evidence}, Target Node: {target}")
-        print(f"Evidence probability: {ie.evidenceProbability()}")
+        print(f"Evidence probability: {evidence_proba}")
 
         output.write(f"{ie.evidenceProbability()} ")
         output.flush()

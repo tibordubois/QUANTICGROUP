@@ -1,10 +1,10 @@
 #parameters
 
-scaling_min = 1.5
-scaling_max = 2.2
-num_runs = 10
+scaling_min = 4.5
+scaling_max = 5.2
+num_runs = 100
 num_evidence_var = 3
-max_iter = 1
+max_iter = 1000
 
 #imports
 

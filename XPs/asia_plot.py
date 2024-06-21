@@ -1,18 +1,20 @@
 #parameters
 
-scaling_min = 4.5
-scaling_max = 5.2
+scaling_min = 1.5
+scaling_max = 2.2
 num_runs = 100
 num_evidence_var = 3
-max_iter = 100
+max_iter = 1000
+
+proba_ceil = 1e-3
 
 #imports
 
 import sys
 if sys.path[-1] != "..": sys.path.append("..")
 
-from source.qBN.qBNMC import qBayesNet
-from source.qBN.qBNRejection import qInference
+from qBN.qBNMC import qBNMC
+from qBN.qBNRejection import qBNRejection
 from XPs.qBNRT import qRuntime
 
 import pyAgrum as gum
@@ -74,7 +76,7 @@ print("+ Loading ASIA")
 asia_bn = gum.loadBN("asia.bif")
 
 print("+ Building qBayesNet")
-qbn = qBayesNet(asia_bn)
+qbn = qBNMC(asia_bn)
 
 print("+ Building circuit")
 qc = qbn.buildCircuit(add_measure=True)
@@ -85,36 +87,41 @@ print("\n-------Ploting-------\n\n",end="")
 
 with open("asia_output.txt", "w") as output:
 
-    output.write("ev_prob_list:\n")
-    output.write(f"scaling_min: {scaling_min}\nscaling_max: {scaling_max}\nnum_runs: {num_runs}\nnum_evidence_var: {num_evidence_var}\n max_iter: {max_iter}\n")
+    output.write(f"scaling_min {scaling_min}\nscaling_max {scaling_max}\nnum_runs {num_runs}\nnum_evidence_var {num_evidence_var}\nmax_iter {max_iter}\n")
     output.write("ev_prob_list mc_rt_list mc_me_list qinf_rt_list qinf_me_list\n")
     output.flush()
 
     for i in range(num_runs):
+        
+        evidence_proba = 0
 
-        #Randomly Chosen Evidence and Target
-        n_ids = asia_bn.nodes()
-        evidence = {ev_id: random.randint(0,1) for ev_id in randomChoice(n_ids, num_evidence_var)}
-        target = list(randomChoice(n_ids, 1))[0]
+        while evidence_proba < proba_ceil:
 
-        #modifying the probabilities
-        scaling = random.random()*(scaling_max - scaling_min) + scaling_min
-        old_evidence_cpts = dict()
+            #Randomly Chosen Evidence and Target
+            n_ids = asia_bn.nodes()
+            evidence = {ev_id: random.randint(0,1) for ev_id in randomChoice(n_ids, num_evidence_var)}
+            target = list(randomChoice(n_ids, 1))[0]
 
-        for n_id, n_state in evidence.items():
-            print(asia_bn.cpt(n_id))
-            old_evidence_cpts[n_id] =  asia_bn.cpt(n_id).tolist()
-            asia_bn.cpt(n_id)[:] = modifyBinaryCPT(asia_bn.cpt(n_id), n_state, scaling)
-            asia_bn.cpt(n_id).translate(1e-4).normalizeAsCPT()
+            #modifying the probabilities
+            scaling = random.random()*(scaling_max - scaling_min) + scaling_min
+            old_evidence_cpts = dict()
 
-        #Lazy Propagation Benchmark
+            for n_id, n_state in evidence.items():
+                #print(asia_bn.cpt(n_id))
+                old_evidence_cpts[n_id] =  asia_bn.cpt(n_id).tolist()
+                asia_bn.cpt(n_id)[:] = modifyBinaryCPT(asia_bn.cpt(n_id), n_state, scaling)
+                asia_bn.cpt(n_id).translate(1e-4).normalizeAsCPT()
 
-        ie = gum.LazyPropagation(asia_bn)
-        ie.setEvidence(evidence)
-        ie.makeInference()
+            #Lazy Propagation Benchmark
+
+            ie = gum.LazyPropagation(asia_bn)
+            ie.setEvidence(evidence)
+            ie.makeInference()
+
+            evidence_proba = ie.evidenceProbability()
 
         print(f"Evidence: {evidence}, Target Node: {target}")
-        print(f"Evidence probability: {ie.evidenceProbability()}")
+        print(f"Evidence probability: {evidence_proba}")
 
         output.write(f"{ie.evidenceProbability()} ")
         output.flush()
@@ -138,7 +145,7 @@ with open("asia_output.txt", "w") as output:
 
         #Quantum Rejection Sampling
 
-        qinf = qInference(qbn)
+        qinf = qBNRejection(qbn)
         qinf.setEvidence(evidence)
         qinf.setMaxIter(max_iter)
         qinf.makeInference(verbose=0)

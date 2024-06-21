@@ -1,20 +1,26 @@
 \documentclass{article}
 \usepackage{graphicx} % Required for inserting images
-\usepackage{amsfonts, amsmath, bbm, mathrsfs, subcaption, adjustbox}
+\usepackage{amsfonts, amsmath, bbm, mathrsfs, subcaption, adjustbox, titling, adforn, algorithm, float}
 \usepackage[backend=biber]{biblatex}
 
 \addbibresource{references.bib}
 
-\author{Thierry Rioual}
-\date{}
+\author{Thierry Rioual, Tibor Dubois}
+\date{June 2024}
 
 \begin{document}
 
 \begin{adjustbox}{minipage=1.2\textwidth, center}
 \begin{center}
-\textsc{\Large Quantum Inference in Bayesian Networks}
+\textsc{\Large Quantum Rejection Sampling in Bayesian Networks}
 \\[5pt]
-\textsc{\large Report}  
+\textsc{\large Theoretical Basis Explanation} 
+\\[5pt]
+\adforn{19}
+\\[5pt]
+\small \theauthor { supervised by Pierre-Henri Wuillemin}
+\\
+\small \thedate { LIP6 - Sorbonne University}
 \end{center}
 \end{adjustbox}
 

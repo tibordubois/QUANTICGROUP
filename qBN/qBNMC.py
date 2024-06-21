@@ -17,7 +17,7 @@ from qiskit_ibm_runtime import SamplerV2
 from qiskit_ibm_runtime.fake_provider import FakeOsaka
 
 
-class qBayesNet:
+class qBNMC:
     """
     Class used to build a Quantum Circuit representation of a Bayesian Network
     Based on the paper:

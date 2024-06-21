@@ -1,7 +1,9 @@
 import sys
 if sys.path[-1] != "..": sys.path.append("..")
 
-from source.qBN.qBNRejection import qInference
+from qBN.qBNMC import qBNMC
+from qBN.qBNRejection import qBNRejection
+
 
 from qiskit import QuantumCircuit, transpile
 from qiskit.converters import circuit_to_dag
@@ -49,13 +51,13 @@ class qRuntime:
 
     """
 
-    def __init__(self, qinf: qInference, backend: IBMBackend) -> None:
+    def __init__(self, qinf: qBNRejection, backend: IBMBackend) -> None:
         """
         Initialises the qBaysNet Object 
 
         Parameters
         ----------
-        qinf: qInference
+        qinf: qBNRejection
             Quantum rejecetion sampler
         backend: IBMBackend
             Backend to get the execution time on quantum harware

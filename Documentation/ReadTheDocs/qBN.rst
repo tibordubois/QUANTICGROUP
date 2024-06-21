@@ -4,7 +4,7 @@ qBN package
 qBNMC module
 ------------
 
-The `qBayesNet` class is designed to build a quantum circuit representation of a Bayesian Network. This implementation is based on the concepts presented in the paper `Quantum Circuit Representation of Bayesian Networks <https://arxiv.org/abs/2004.14803>`_ by Sima E. Borujeni. The class allows for the creation of a quantum circuit using Qiskit and facilitates performing inference on the network to compare the performance with classical Bayesian networks.
+The `qBNMC` class is designed to build a quantum circuit representation of a Bayesian Network. This implementation is based on the concepts presented in the paper `Quantum Circuit Representation of Bayesian Networks <https://arxiv.org/abs/2004.14803>`_ by Sima E. Borujeni. The class allows for the creation of a quantum circuit using Qiskit and facilitates performing inference on the network to compare the performance with classical Bayesian networks.
 
 Each function in this class corresponds to specific equations and figures in the paper, providing a direct mapping of theoretical concepts to practical implementation:
 
@@ -35,7 +35,7 @@ qBNRT module
 qBNRejection module
 -------------------
 
-The `qInference` class implementation is based on the principles and algorithms presented in the paper `Quantum Inference on Bayesian Networks <https://arxiv.org/abs/1402.7359>`_ by Guang Hao Low et al. The class provides a comprehensive framework for performing quantum inference, integrating key concepts from the paper into its methods. Below is a detailed explanation of how the class aligns with the paper:
+The `qBNRejection` class implementation is based on the principles and algorithms presented in the paper `Quantum Inference on Bayesian Networks <https://arxiv.org/abs/1402.7359>`_ by Guang Hao Low et al. The class provides a comprehensive framework for performing quantum inference, integrating key concepts from the paper into its methods. Below is a detailed explanation of how the class aligns with the paper:
 
 - **Quantum Representation of Bayesian Networks**:
   - The class constructs the quantum operator \( A \) using the method `getA`, which builds a quantum circuit representing the Bayesian network's joint distribution, as discussed in Section VI.B of the paper.

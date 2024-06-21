@@ -1,10 +1,10 @@
 #parameters
 
-scaling_min = 4.5
-scaling_max = 5.2
-num_runs = 100
+scaling_min = 1.5
+scaling_max = 2.2
+num_runs = 10
 num_evidence_var = 3
-max_iter = 100
+max_iter = 1
 
 #imports
 
@@ -85,8 +85,7 @@ print("\n-------Ploting-------\n\n",end="")
 
 with open("asia_output.txt", "w") as output:
 
-    output.write("ev_prob_list:\n")
-    output.write(f"scaling_min: {scaling_min}\nscaling_max: {scaling_max}\nnum_runs: {num_runs}\nnum_evidence_var: {num_evidence_var}\n max_iter: {max_iter}\n")
+    output.write(f"scaling_min {scaling_min}\nscaling_max {scaling_max}\nnum_runs {num_runs}\nnum_evidence_var {num_evidence_var}\nmax_iter {max_iter}\n")
     output.write("ev_prob_list mc_rt_list mc_me_list qinf_rt_list qinf_me_list\n")
     output.flush()
 
@@ -102,7 +101,7 @@ with open("asia_output.txt", "w") as output:
         old_evidence_cpts = dict()
 
         for n_id, n_state in evidence.items():
-            print(asia_bn.cpt(n_id))
+            #print(asia_bn.cpt(n_id))
             old_evidence_cpts[n_id] =  asia_bn.cpt(n_id).tolist()
             asia_bn.cpt(n_id)[:] = modifyBinaryCPT(asia_bn.cpt(n_id), n_state, scaling)
             asia_bn.cpt(n_id).translate(1e-4).normalizeAsCPT()

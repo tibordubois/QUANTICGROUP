@@ -48,30 +48,26 @@ with open("asia_output.txt") as f:
         qinf_rt_list.append(float(val[3]))
         qinf_me_list.append(float(val[4]))
 
-print(ev_prob_list)
-print(mc_rt_list)
-print(mc_me_list)
-print(qinf_rt_list)
-print(qinf_me_list)
-
 #prediction
 
-inv_mc_rt_list = [1/rt for rt in mc_rt_list]
-inv2_qinf_rt_list = [1/rt**2 for rt in qinf_rt_list]
+v_log_func = np.vectorize(lambda x: np.log10(x))
+v_exp_func = np.vectorize(lambda x: np.power(10, x))
 
-prediction_range = np.array(range(int(min(ev_prob_list)*1000), int(max(ev_prob_list)*1000))).reshape(-1, 1)/1000
+log_proba = v_log_func(ev_prob_list)
+log_mc_rt = v_log_func(mc_rt_list)
+log_qinf_rt = v_log_func(qinf_rt_list)
 
-reg_mc = LinearRegression().fit(np.array(ev_prob_list).reshape(-1, 1), np.array(inv_mc_rt_list))
-inv_prediction_mc = reg_mc.predict(prediction_range)
+log_prediction_range = np.linspace(np.log10(min(ev_prob_list)), np.log10(max(ev_prob_list)), num=100, endpoint=True).reshape(-1, 1)
 
-reg_qinf = LinearRegression().fit(np.array(ev_prob_list).reshape(-1, 1), np.array(inv2_qinf_rt_list))
-inv2_prediction_qinf = reg_qinf.predict(prediction_range)
+reg_mc = LinearRegression().fit(np.array(log_proba).reshape(-1, 1), np.array(log_mc_rt))
+log_prediction_mc = reg_mc.predict(log_prediction_range)
 
-v_mc_func = np.vectorize(lambda x: 1/x)
-prediction_mc = v_mc_func(inv_prediction_mc)
+reg_qinf = LinearRegression().fit(np.array(log_proba).reshape(-1, 1), np.array(log_qinf_rt))
+log_prediction_qinf = reg_qinf.predict(log_prediction_range)
 
-v_inf_func = np.vectorize(lambda x: 1/np.sqrt(x))
-prediction_inf = v_inf_func(inv2_prediction_qinf)
+prediction_mc = v_exp_func(log_prediction_mc)
+prediction_inf = v_exp_func(log_prediction_qinf)
+prediction_range = v_exp_func(log_prediction_range)
 
 #plotting
 
@@ -85,6 +81,7 @@ plt.scatter(ev_prob_list, qinf_rt_list, color="tab:blue", s=10, label="QI run ti
 plt.plot(prediction_range, prediction_inf, color="tab:blue", label="QI linear reg. on 1/x\u00B2")
 
 plt.yscale('log')
+plt.xscale('log')
 plt.grid(True)
 plt.xlabel('Evidence probability')
 plt.ylabel('Run time')
@@ -101,6 +98,7 @@ plt.scatter(ev_prob_list, mc_me_list, color="tab:orange", s=10, label="MC run ti
 plt.scatter(ev_prob_list, qinf_me_list, color="tab:blue", s=10, label="QI run time")
 
 plt.yscale('log')
+plt.xscale('log')
 plt.grid(True)
 plt.xlabel('Evidence probability')
 plt.ylabel('Max Error')

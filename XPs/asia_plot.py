@@ -1,12 +1,13 @@
 #parameters
 
-scaling_min = 1.5
-scaling_max = 2.2
+scaling_min = 4.5
+scaling_max = 5.2
 num_runs = 100
 num_evidence_var = 3
-max_iter = 1000
+max_iter = 1
 
-proba_ceil = 1e-3
+proba_min = 1e-6
+proba_max = 1e-2
 
 #imports
 
@@ -33,8 +34,8 @@ service = QiskitRuntimeService(
     token='1b6910ff55c1d3853e5c8e2ca2b0dbbc3b415fb897d26a6c272c63254527581c824aea1180585f706ab8263318f3c553549d136ca32952ef401abb54011eee33'
 )
 
-backend = service.backend("ibm_brisbane")
 print("\n+ Loading Backend")
+backend = service.backend("ibm_brisbane")
 
 #functions
 
@@ -71,8 +72,9 @@ def modifyBinaryCPT(cpt, state, scaling):
     else:
         return [modifyBinaryCPT(cpt[0], state, scaling), modifyBinaryCPT(cpt[1], state, scaling)]
 
-#Bayeset setup
-print("+ Loading ASIA")
+#BayesNet setup
+
+print("+ Loading asia.bif")
 asia_bn = gum.loadBN("asia.bif")
 
 print("+ Building qBayesNet")
@@ -81,9 +83,9 @@ qbn = qBNMC(asia_bn)
 print("+ Building circuit")
 qc = qbn.buildCircuit(add_measure=True)
 
-#ploting
+#plotting
 
-print("\n-------Ploting-------\n\n",end="")
+print("\n-------Plotting-------\n\n",end="")
 
 with open("asia_output.txt", "w") as output:
 
@@ -92,22 +94,23 @@ with open("asia_output.txt", "w") as output:
     output.flush()
 
     for i in range(num_runs):
-        
+
         evidence_proba = 0
 
-        while evidence_proba < proba_ceil:
+        while evidence_proba < proba_min or evidence_proba > proba_max:
 
             #Randomly Chosen Evidence and Target
+
             n_ids = asia_bn.nodes()
             evidence = {ev_id: random.randint(0,1) for ev_id in randomChoice(n_ids, num_evidence_var)}
             target = list(randomChoice(n_ids, 1))[0]
 
-            #modifying the probabilities
+            #Modifying the probabilities
+
             scaling = random.random()*(scaling_max - scaling_min) + scaling_min
             old_evidence_cpts = dict()
 
             for n_id, n_state in evidence.items():
-                #print(asia_bn.cpt(n_id))
                 old_evidence_cpts[n_id] =  asia_bn.cpt(n_id).tolist()
                 asia_bn.cpt(n_id)[:] = modifyBinaryCPT(asia_bn.cpt(n_id), n_state, scaling)
                 asia_bn.cpt(n_id).translate(1e-4).normalizeAsCPT()
@@ -120,11 +123,10 @@ with open("asia_output.txt", "w") as output:
 
             evidence_proba = ie.evidenceProbability()
 
-        print(f"Evidence: {evidence}, Target Node: {target}")
-        print(f"Evidence probability: {evidence_proba}")
+            print(f"Evidence: {evidence}, Target Node: {target}")
+            print(f"Evidence probability: {evidence_proba}")
 
         output.write(f"{ie.evidenceProbability()} ")
-        output.flush()
 
         #Monte Carlo Classical Rejection Sampling
 
@@ -141,7 +143,6 @@ with open("asia_output.txt", "w") as output:
         print(f"\tMC - Run time: {mc_run_time}, Max Error: {mc_max_error}")
 
         output.write(f"{mc_run_time} {mc_max_error} ")
-        output.flush()
 
         #Quantum Rejection Sampling
 

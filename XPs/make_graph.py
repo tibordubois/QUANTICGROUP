@@ -1,8 +1,4 @@
-import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression 
-import numpy as np
-
-#params
+#parameters
 
 num_runs = 0
 max_iter = 0
@@ -22,6 +18,12 @@ qinf_me_list = list()
 prediction_range = list()
 prediction_mc = list()
 prediction_inf = list()
+
+#imports
+
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+import numpy as np
 
 #parsing
 
@@ -71,7 +73,7 @@ prediction_range = v_exp_func(log_prediction_range)
 
 #plotting
 
-#Run time
+#run time
 
 plt.figure(0)
 
@@ -90,7 +92,7 @@ plt.legend()
 
 plt.savefig('../XPs/plots/TimeProbScatter2.png')
 
-#Max Error
+#max error
 
 plt.figure(1)
 

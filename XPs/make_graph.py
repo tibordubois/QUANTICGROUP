@@ -26,29 +26,37 @@ from sklearn.linear_model import LinearRegression
 import numpy as np
 
 #parsing
+# restore the filename from command line
+import sys
+if len(sys.argv)>1:
+  filenames = sys.argv[1:]
+else:
+  filenames = ["asia_output.txt"]
 
-with open("asia_output.txt") as f:
+for filename in filenames:  
+  with open(filename) as f:
+      val = f.readline().strip().split(' ')
+      scaling_min = val[1]
+      val = f.readline().strip().split(' ')
+      scaling_max = val[1]
+      val = f.readline().strip().split(' ')
+      num_runs = val[1]
+      val = f.readline().strip().split(' ')
+      num_evidence_var = val[1]
+      val = f.readline().strip().split(' ')
+      max_iter = val[1]
 
-    val = f.readline().strip().split(' ')
-    scaling_min = val[1]
-    val = f.readline().strip().split(' ')
-    scaling_max = val[1]
-    val = f.readline().strip().split(' ')
-    num_runs = val[1]
-    val = f.readline().strip().split(' ')
-    num_evidence_var = val[1]
-    val = f.readline().strip().split(' ')
-    max_iter = val[1]
+      val = f.readline().strip().split(' ')
 
-    val = f.readline().strip().split(' ')
+      for line in f:
+          val = line.strip().split(' ')
+          ev_prob_list.append(float(val[0]))
+          mc_rt_list.append(float(val[1]))
+          mc_me_list.append(float(val[2]))
+          qinf_rt_list.append(float(val[3]))
+          qinf_me_list.append(float(val[4]))
 
-    for line in f:
-        val = line.strip().split(' ')
-        ev_prob_list.append(float(val[0]))
-        mc_rt_list.append(float(val[1]))
-        mc_me_list.append(float(val[2]))
-        qinf_rt_list.append(float(val[3]))
-        qinf_me_list.append(float(val[4]))
+filename = filenames[0].split('.')[0]
 
 #prediction
 
@@ -99,7 +107,7 @@ plt.title(f'Run time evolution of MC/QI samplers ({num_runs} observations, {max_
 plt.legend()
 
 
-plt.savefig('../XPs/plots/TimeProbScatter2.png')
+plt.savefig(f'../XPs/plots/Time-{filename}.png')
 
 #max error
 
@@ -116,4 +124,4 @@ plt.ylabel('Max Error')
 plt.title(f'Max Error evolution of MC/QI samplers ({num_runs} observations, {max_iter} iterations)')
 plt.legend()
 
-plt.savefig('../XPs/plots/ErrProbScatter2.png')
+plt.savefig(f'../XPs/plots/Err-{filename}.png')

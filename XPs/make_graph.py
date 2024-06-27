@@ -12,6 +12,7 @@ prediction_inf = list()
 
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
+from scipy.stats import pearsonr
 import numpy as np
 
 #parsing
@@ -81,8 +82,8 @@ qinf_estimation = np.vectorize(lambda x: np.power(x, reg_qinf.coef_)*np.power(10
 mc_rmse = np.sqrt(np.array([np.power(mc_estimation(ev_prob_list[i])[0] - mc_rt_list[i], 2) for i in range(n)]).sum(axis=0)/n)
 qinf_rmse = np.sqrt(np.array([np.power(qinf_estimation(ev_prob_list[i])[0] - qinf_rt_list[i], 2) for i in range(len(ev_prob_list))]).sum(axis=0)/n)
 
-r_mc = np.sqrt(reg_mc.score(log_proba, log_mc_rt))
-r_qinf = np.sqrt(reg_qinf.score(log_proba, log_qinf_rt))
+r_mc = pearsonr(np.hstack(log_proba), log_mc_rt)[0]
+r_qinf = pearsonr(np.hstack(log_proba), log_qinf_rt)[0]
 
 #run time
 
@@ -97,7 +98,7 @@ plt.yscale('log')
 plt.xscale('log')
 plt.grid(visible=True, which='both')
 plt.xlabel('Evidence probability')
-plt.ylabel('Run time')
+plt.ylabel('Run time (in seconds)')
 plt.title(f'Run time evolution of MC/QI samplers ({num_runs} observations, {max_iter} iterations)\nLinear Regression in log-log scale')
 plt.legend()
 

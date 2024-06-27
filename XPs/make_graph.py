@@ -78,8 +78,8 @@ qinf_estimation = np.vectorize(lambda x: np.power(x, reg_qinf.coef_)*np.power(10
 mc_rmse = np.sqrt(np.array([np.power(mc_estimation(ev_prob_list[i])[0] - mc_rt_list[i], 2) for i in range(n)]).sum(axis=0)/n)
 qinf_rmse = np.sqrt(np.array([np.power(qinf_estimation(ev_prob_list[i])[0] - qinf_rt_list[i], 2) for i in range(len(ev_prob_list))]).sum(axis=0)/n)
 
-r_mc = reg_mc.score(log_proba, log_mc_rt)
-r_qinf = reg_qinf.score(log_proba, log_qinf_rt)
+r_mc = np.sqrt(reg_mc.score(log_proba, log_mc_rt))
+r_qinf = np.sqrt(reg_qinf.score(log_proba, log_qinf_rt))
 
 #run time
 
@@ -90,7 +90,7 @@ plt.plot(prediction_range, prediction_mc, color="tab:orange", label=f"MC pred. =
 plt.scatter(ev_prob_list, qinf_rt_list, color="tab:blue", s=10, label="QI run time")
 plt.plot(prediction_range, prediction_inf, color="tab:blue", label=f"QI pred. = 10^{(reg_qinf.intercept_):.2f}/x^{-reg_qinf.coef_[0]:.2f}, r={r_qinf:.2f}")
 
-plt.yscale('log')
+#plt.yscale('log')
 plt.xscale('log')
 plt.grid(visible=True, which='both')
 plt.xlabel('Evidence probability')

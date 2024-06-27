@@ -1,14 +1,3 @@
-#parameters
-
-num_runs = 0
-max_iter = 0
-
-scaling_min = 4.5
-scaling_max = 5.2
-num_runs = 100
-num_evidence_var = 3
-max_iter = 100
-
 ev_prob_list = list()
 mc_rt_list = list()
 mc_me_list = list()
@@ -55,16 +44,16 @@ with open("asia_output.txt") as f:
 v_log_func = np.vectorize(lambda x: np.log10(x))
 v_exp_func = np.vectorize(lambda x: np.power(10, x))
 
-log_proba = v_log_func(ev_prob_list)
-log_mc_rt = v_log_func(mc_rt_list)
-log_qinf_rt = v_log_func(qinf_rt_list)
+log_proba = np.array(v_log_func(ev_prob_list)).reshape(-1, 1)
+log_mc_rt = np.array(v_log_func(mc_rt_list))
+log_qinf_rt = np.array(v_log_func(qinf_rt_list))
 
 log_prediction_range = np.linspace(np.log10(min(ev_prob_list)), np.log10(max(ev_prob_list)), num=100, endpoint=True).reshape(-1, 1)
 
-reg_mc = LinearRegression().fit(np.array(log_proba).reshape(-1, 1), np.array(log_mc_rt))
+reg_mc = LinearRegression().fit(log_proba, log_mc_rt)
 log_prediction_mc = reg_mc.predict(log_prediction_range)
 
-reg_qinf = LinearRegression().fit(np.array(log_proba).reshape(-1, 1), np.array(log_qinf_rt))
+reg_qinf = LinearRegression().fit(log_proba, log_qinf_rt)
 log_prediction_qinf = reg_qinf.predict(log_prediction_range)
 
 prediction_mc = v_exp_func(log_prediction_mc)
@@ -81,23 +70,25 @@ qinf_estimation = np.vectorize(lambda x: np.power(x, reg_qinf.coef_)*np.power(10
 mc_rmse = np.sqrt(np.array([np.power(mc_estimation(ev_prob_list[i])[0] - mc_rt_list[i], 2) for i in range(n)]).sum(axis=0)/n)
 qinf_rmse = np.sqrt(np.array([np.power(qinf_estimation(ev_prob_list[i])[0] - qinf_rt_list[i], 2) for i in range(len(ev_prob_list))]).sum(axis=0)/n)
 
+r_mc = reg_mc.score(log_proba, log_mc_rt)
+r_qinf = reg_qinf.score(log_proba, log_qinf_rt)
+
 #run time
 
 plt.figure(num=0, figsize=(9,7))
 
 plt.scatter(ev_prob_list, mc_rt_list, color="tab:orange", s=10, label="MC run time")
-plt.plot(prediction_range, prediction_mc, color="tab:orange", label=f"MC pred. = 10^{(reg_mc.intercept_):.2f}/x^{-reg_mc.coef_[0]:.2f}, RMSE={mc_rmse:.2f}")
+plt.plot(prediction_range, prediction_mc, color="tab:orange", label=f"MC pred. = 10^{(reg_mc.intercept_):.2f}/x^{-reg_mc.coef_[0]:.2f}, r={r_mc:.2f}")
 plt.scatter(ev_prob_list, qinf_rt_list, color="tab:blue", s=10, label="QI run time")
-plt.plot(prediction_range, prediction_inf, color="tab:blue", label=f"QI pred. = 10^{(reg_qinf.intercept_):.2f}/x^{-reg_qinf.coef_[0]:.2f}, RMSE={qinf_rmse:.2f}")
+plt.plot(prediction_range, prediction_inf, color="tab:blue", label=f"QI pred. = 10^{(reg_qinf.intercept_):.2f}/x^{-reg_qinf.coef_[0]:.2f}, r={r_qinf:.2f}")
 
 plt.yscale('log')
 plt.xscale('log')
 plt.grid(visible=True, which='both')
 plt.xlabel('Evidence probability')
 plt.ylabel('Run time')
-plt.title(f'Run time evolution of MC/QI samplers ({num_runs} observations, {max_iter} iterations)\nLinear Regression with log\u2081\u2080(g(10\u02e3)) applied on X and Y')
+plt.title(f'Run time evolution of MC/QI samplers ({num_runs} observations, {max_iter} iterations)\nLinear Regression in log-log scale')
 plt.legend()
-
 
 plt.savefig('../XPs/plots/TimeProbScatter2.png')
 
@@ -110,7 +101,7 @@ plt.scatter(ev_prob_list, qinf_me_list, color="tab:blue", s=10, label="QI max er
 
 plt.yscale('log')
 plt.xscale('log')
-plt.grid(True)
+plt.grid(visible=True, which='both')
 plt.xlabel('Evidence probability')
 plt.ylabel('Max Error')
 plt.title(f'Max Error evolution of MC/QI samplers ({num_runs} observations, {max_iter} iterations)')

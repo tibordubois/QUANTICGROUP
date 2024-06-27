@@ -22,14 +22,16 @@ if len(sys.argv)>1:
 else:
   filenames = ["asia_output.txt"]
 
-for filename in filenames:  
+num_runs = 0
+
+for filename in filenames:
   with open(filename) as f:
       val = f.readline().strip().split(' ')
       scaling_min = val[1]
       val = f.readline().strip().split(' ')
       scaling_max = val[1]
       val = f.readline().strip().split(' ')
-      num_runs = val[1]
+      #num_runs = int(val[1])
       val = f.readline().strip().split(' ')
       num_evidence_var = val[1]
       val = f.readline().strip().split(' ')
@@ -38,6 +40,7 @@ for filename in filenames:
       val = f.readline().strip().split(' ')
 
       for line in f:
+          num_runs += 1
           val = line.strip().split(' ')
           ev_prob_list.append(float(val[0]))
           mc_rt_list.append(float(val[1]))
@@ -90,7 +93,7 @@ plt.plot(prediction_range, prediction_mc, color="tab:orange", label=f"MC pred. =
 plt.scatter(ev_prob_list, qinf_rt_list, color="tab:blue", s=10, label="QI run time")
 plt.plot(prediction_range, prediction_inf, color="tab:blue", label=f"QI pred. = 10^{(reg_qinf.intercept_):.2f}/x^{-reg_qinf.coef_[0]:.2f}, r={r_qinf:.2f}")
 
-#plt.yscale('log')
+plt.yscale('log')
 plt.xscale('log')
 plt.grid(visible=True, which='both')
 plt.xlabel('Evidence probability')

@@ -50,7 +50,7 @@ for filename in filenames:
           qinf_me_list.append(float(val[4]))
 
 filename = filenames[0].split('.')[0]
-
+print(f"Plotting in {filename}-*.pdf")
 #prediction
 
 v_log_func = np.vectorize(lambda x: np.log10(x))
@@ -103,7 +103,7 @@ plt.title(f'Run time evolution of MC/QI samplers ({num_runs} observations, {max_
 plt.legend()
 
 
-plt.savefig(f'../XPs/plots/Time-{filename}.png')
+plt.savefig(f'../XPs/plots/{filename}-TimeLogLog.pdf')
 
 #max error
 
@@ -120,4 +120,4 @@ plt.ylabel('Max Error')
 plt.title(f'Max Error evolution of MC/QI samplers ({num_runs} observations, {max_iter} iterations)')
 plt.legend()
 
-plt.savefig(f'../XPs/plots/Err-{filename}.png')
+plt.savefig(f'../XPs/plots/{filename}-Err.pdf')

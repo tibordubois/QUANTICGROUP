@@ -104,7 +104,7 @@ plt.ylabel('Run time (in seconds)')
 plt.title(f'Run time evolution of MC/QI samplers ({num_runs} observations, {max_iter} iterations)\nLinear Regression in log-log scale')
 plt.legend()
 
-plt.savefig(f'../XPs/plots/Time-{filename}-loglog.png')
+plt.savefig(f'../XPs/plots/{filename}-TimeLogLog.pdf')
 
 #simple-log scale
 
@@ -122,7 +122,7 @@ plt.ylabel('Run time (in seconds)')
 plt.title(f'Run time evolution of MC/QI samplers ({num_runs} observations, {max_iter} iterations)\nLinear Regression in log-log scale')
 plt.legend()
 
-plt.savefig(f'../XPs/plots/{filename}-TimeLogLog.pdf')
+plt.savefig(f'../XPs/plots/{filename}-TimeLog.pdf')
 
 #max error
 

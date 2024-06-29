@@ -87,6 +87,8 @@ r_qinf = pearsonr(np.hstack(log_proba), log_qinf_rt)[0]
 
 #run time
 
+#log-log scale
+
 plt.figure(num=0, figsize=(9,7))
 
 plt.scatter(ev_prob_list, mc_rt_list, color="tab:orange", s=10, label="MC run time")
@@ -102,12 +104,29 @@ plt.ylabel('Run time (in seconds)')
 plt.title(f'Run time evolution of MC/QI samplers ({num_runs} observations, {max_iter} iterations)\nLinear Regression in log-log scale')
 plt.legend()
 
+plt.savefig(f'../XPs/plots/Time-{filename}-loglog.png')
+
+#simple-log scale
+
+plt.figure(num=1, figsize=(9,7))
+
+plt.scatter(ev_prob_list, mc_rt_list, color="tab:orange", s=10, label="MC run time")
+plt.plot(prediction_range, prediction_mc, color="tab:orange", label=f"MC pred. = 10^{(reg_mc.intercept_):.2f}/x^{-reg_mc.coef_[0]:.2f}, r={r_mc:.2f}")
+plt.scatter(ev_prob_list, qinf_rt_list, color="tab:blue", s=10, label="QI run time")
+plt.plot(prediction_range, prediction_inf, color="tab:blue", label=f"QI pred. = 10^{(reg_qinf.intercept_):.2f}/x^{-reg_qinf.coef_[0]:.2f}, r={r_qinf:.2f}")
+
+plt.xscale('log')
+plt.grid(visible=True, which='both')
+plt.xlabel('Evidence probability')
+plt.ylabel('Run time (in seconds)')
+plt.title(f'Run time evolution of MC/QI samplers ({num_runs} observations, {max_iter} iterations)\nLinear Regression in log-log scale')
+plt.legend()
 
 plt.savefig(f'../XPs/plots/Time-{filename}.png')
 
 #max error
 
-plt.figure(num=1, figsize=(9,7))
+plt.figure(num=2, figsize=(9,7))
 
 plt.scatter(ev_prob_list, mc_me_list, color="tab:orange", s=10, label="MC max error")
 plt.scatter(ev_prob_list, qinf_me_list, color="tab:blue", s=10, label="QI max error")

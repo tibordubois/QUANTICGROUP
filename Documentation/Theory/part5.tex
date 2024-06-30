@@ -35,6 +35,7 @@ Where $\mathcal{Q} \otimes \mathcal{E}_0$ contains the q-samples of the distribu
 By performing amplitude amplification on the system, we obtain a q-sample of the distribution $\mathbb{P}(\mathcal{Q}|\mathcal{E} = e)$ with high probability.
 
 \subsection{Algorithm}
+\label{alg:QuantRS}
 \begin{algorithm}[H]
 Let $i$ be the iterator of the outer loop:
 \begin{itemize}
@@ -59,6 +60,68 @@ Let $i$ be the iterator of the outer loop:
     \end{itemize}
 \end{itemize}
 \end{algorithm}
+
+\begin{figure}[H]
+\centering
+\scalebox{1}{
+\Qcircuit @C=.6em @R=.6em { \\
+	 	\lstick{{\ket{0}} :  } & \multigate{2}{\mathrm{A}} & \multigate{2}{\mathrm{G^{2^{i+1}}}} & \meter & \qw & \qw & \qw \\
+        \lstick{\raisebox{0.5em}{\vdots}\hspace{0.7em}} & \nghost{\mathrm{A}} & \nghost{\mathrm{G^{2^{i+1}}}} & & \raisebox{0.5em}{\rotatebox{35}{\vdots}} & & \\
+        \lstick{{\ket{0}} :  } & \ghost{\mathrm{A}} & \ghost{\mathrm{G^{2^{i+1}}}} & \qw & \qw & \meter & \qw\\
+	 	\lstick{\mathrm{{meas} :  }} & \cw & \lstick{/_{_{n}}} \cw & \dstick{_{_{\hspace{0.0em}1}}} \cw \ar @{<=} [-3,0] & \dstick{_{_{\hspace{0.0em}\hdots}}} \cw & \dstick{_{_{\hspace{0.0em}n}}} \cw \ar @{<=} [-1,0] & \cw\\
+\\ }}
+\caption{Quantum circuit of algorithm \ref{alg:QuantRS}}
+    \label{fig:GroverCirc}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+\scalebox{.8}{
+\raisebox{-1em}{
+\Qcircuit @C=.6em @R=.6em { \\
+	 	\qw & \multigate{2}{\mathrm{G}} & \qw \\
+        \raisebox{0.5em}{\vdots} & \nghost{\mathrm{G}} & \raisebox{0.5em}{\vdots} \\
+        \qw & \ghost{\mathrm{G}} & \qw \\
+\\ }
+\hspace{0.5em}
+\raisebox{-2.9em}{\Large =}
+\hspace{0.5em}
+\Qcircuit @C=.6em @R=.6em { \\
+	 	\qw & \multigate{2}{\mathrm{U_e}} & \multigate{2}{\mathrm{A^{\dag}}} & \multigate{2}{\mathrm{U_0}} & \multigate{2}{\mathrm{A}} & \qw \\
+        \raisebox{0.5em}{\vdots} & \nghost{\mathrm{U_e}} & \nghost{\mathrm{A^{\dag}}} & \nghost{\mathrm{U_0}} & \nghost{\mathrm{A}} & \raisebox{0.5em}{\vdots} \\
+        \qw & \ghost{\mathrm{U_e}} & \ghost{\mathrm{A^{\dag}}} & \ghost{\mathrm{U_0}} & \ghost{\mathrm{A}} & \qw \\
+\\ }
+}
+
+\hspace{1.5cm}
+
+\raisebox{-0.8em}{
+\Qcircuit @C=.6em @R=.8em { \\
+	 	\qw & \multigate{2}{\mathrm{U_e}} & \qw \\
+        \raisebox{0.5em}{\vdots} & \nghost{\mathrm{U_e}} & \raisebox{0.5em}{\vdots} \\
+        \qw & \ghost{\mathrm{U_e}} & \qw \\
+\\ }
+}
+
+\hspace{0.5em}
+\raisebox{-4.1em}{\Large =}
+\hspace{1em}
+
+\Qcircuit @C=.6em @R=1em {
+\lstick{} & \qw & \qw & \qw & \qw \\
+\lstick{} & \raisebox{0.5em}{\vdots} & & \raisebox{0.5em}{\vdots} & \\
+\lstick{} & \qw & \qw & \qw & \qw 
+\inputgroupv{1}{3}{.8em}{1.4em}{\mathcal{Q}}\\
+\lstick{} & \gate{\mathrm{X_{1}^{1-e_1}}} & \ctrl{2} & \gate{\mathrm{X_{1}^{1-e_1}}} & \qw \\
+\lstick{} & \raisebox{0.5em}{\vdots} & & \raisebox{0.5em}{\vdots} & \\
+\lstick{} & \gate{\mathrm{X_{\scalebox{.7}{$|\mathcal{E}|$}}^{1-e_{\scalebox{.5}{$|\mathcal{E}|$}}}}} & \control\qw & \gate{\mathrm{X_{\scalebox{.7}{$|\mathcal{E}|$}}^{1-e_{\scalebox{.5}{$|\mathcal{E}|$}}}}} & \qw \\
+\inputgroupv{4}{6}{0.8em}{2.4em}{\mathcal{E}}\\
+}
+}
+\caption{Circuits of quantum gates used in \ref{fig:GroverCirc}}
+    \label{fig:GatesCirc}
+\end{figure}
+
 \subsection{Complexity}
 
 Based on the preparation time of a q-sample detailed in the previous section, we derive an expected total complexity of $\mathcal{O}(k2^m/\sqrt{P_e})$ to generate a sample from the distribution $\mathbb{P}(\mathcal{Q}|\mathcal{E}=e)$.

@@ -35,7 +35,7 @@ class qBNRejection:
 
     def __init__(self, qbn: qBNMC) -> None:
         """
-        Initialises the qInference Object 
+        Initialises the qBNRejection Object 
 
         Parameters
         ----------

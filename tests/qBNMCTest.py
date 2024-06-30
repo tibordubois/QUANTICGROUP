@@ -8,8 +8,10 @@ from qBN.qBNMC import qBNMC
 from qiskit import QuantumRegister, QuantumCircuit
 from qiskit.circuit.library import RYGate, XGate
 import numpy as np
+from typing import Union #List and Dict are deprecated (python 3.9)
+import pyAgrum as gum
 
-class TestQBayesNet(unittest.TestCase):
+class TestqBNMC(unittest.TestCase):
     
     def setUp(self):
         self.mock_bn = MagicMock(spec=BayesNet)
@@ -35,6 +37,10 @@ class TestQBayesNet(unittest.TestCase):
 
         self.qb_net = qBNMC(self.mock_bn)
         self.qb_net.n_qb_map = {0: [0, 1], 1: [2, 3], 2: [4, 5]}
+
+        bif_path = os.path.abspath("tests/asia.bif")
+        self.asia_bn = gum.loadBN(bif_path)
+        self.qb_asia_net = qBNMC(self.asia_bn)
 
     def test_initialization(self):
         self.assertEqual(self.qb_net.bn, self.mock_bn)
@@ -96,6 +102,27 @@ class TestQBayesNet(unittest.TestCase):
         result = self.qb_net.getRootNodes()
         self.assertEqual(result, expected_roots)
 
+    def test_getAllParentSates(self):
+        expected_output1 = [{'smoking': 0}, {'smoking': 1}]
+        actual_output1 = self.qb_asia_net.getAllParentSates('lung_cancer')
+
+        expected_output2 = [{'tuberculosis': 0, 'lung_cancer': 0},
+                            {'tuberculosis': 1, 'lung_cancer': 0},
+                            {'tuberculosis': 0, 'lung_cancer': 1},
+                            {'tuberculosis': 1, 'lung_cancer': 1}]
+        actual_output2 = self.qb_asia_net.getAllParentSates('tuberculos_or_cancer')
+
+        expected_output3 = [{'tuberculos_or_cancer': 0, 'bronchitis': 0},
+                            {'tuberculos_or_cancer': 1, 'bronchitis': 0},
+                            {'tuberculos_or_cancer': 0, 'bronchitis': 1},
+                            {'tuberculos_or_cancer': 1, 'bronchitis': 1}]
+        actual_output3 = self.qb_asia_net.getAllParentSates('dyspnoea')
+
+        self.assertEqual(actual_output1, expected_output1)
+        self.assertEqual(actual_output2, expected_output2)
+        self.assertEqual(actual_output3, expected_output3)
+        
+        
     def test_getQuantumRegisters(self):
 
         def variable_side_effect(n_id):

@@ -8,11 +8,11 @@
 - Tibor Dubois
 - Mehmet Gunes
 
-**Encadré par:** Pierre-Henri WUILLEMIN
+**Supervised by:** Pierre-Henri WUILLEMIN
 
-**Type de document:** README
+**Type of document:** README
 
-**Date de publication:** 2024/06/21
+**Date of publication:** 2024/07/01
 
 ## Overview
 

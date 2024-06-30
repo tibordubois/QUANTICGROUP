@@ -12,7 +12,7 @@
 
 **Type of document:** README
 
-**Date of publication:** 2024/07/01
+**Date of publication:** 2024/06/30
 
 ## Overview
 
